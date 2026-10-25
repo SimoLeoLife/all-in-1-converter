@@ -158,6 +158,10 @@ are included as references.
 
 - **Life** — .NET 11 upgrade, strict JSON-only migration, removal of the
   JSON5 split layout, and the Professional Avalonia MVVM dashboard.
+- **Lorenzune** — WebP Lossless sprite sheets for every SWF → Nitro / HAB
+  conversion (furniture, clothes, pets, effects), the standalone SWF
+  decompiler, the per-run conversion and compression report, and the
+  `--benchmark` suite (compression ratio + pixel fidelity).
 - **medievalshell** — .NET 10 modernization, cross-platform refactor,
   ImageSharp migration, the earlier JSON5 split-mode layer, three UI shells
   (CLI / TUI / GUI), Mainframe + Matrix themes, and GitHub Actions pipeline.

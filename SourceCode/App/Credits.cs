@@ -22,6 +22,12 @@ namespace Habbo_Downloader.App
             Console.WriteLine("                      JSON5 split-layout removal and Professional");
             Console.WriteLine("                      Avalonia MVVM dashboard.");
             Console.WriteLine();
+            Console.WriteLine("    Lorenzune      -  WebP Lossless sprite sheets for every SWF -> Nitro /");
+            Console.WriteLine("                      HAB conversion (furniture, clothes, pets, effects),");
+            Console.WriteLine("                      the standalone SWF decompiler, the per-run conversion");
+            Console.WriteLine("                      and compression report, and the --benchmark suite");
+            Console.WriteLine("                      (compression ratio + pixel fidelity).");
+            Console.WriteLine();
             Console.WriteLine("    medievalshell  -  .NET 10 modernization, cross-platform refactor,");
             Console.WriteLine("                      ImageSharp migration, original TUI/CLI/GUI shells,");
             Console.WriteLine("                      JSON5 split-mode layer and Avalonia desktop GUI");
