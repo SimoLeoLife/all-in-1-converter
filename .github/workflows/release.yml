@@ -6,6 +6,10 @@ name: Release
 #
 # Version is generated as v<YYYY.MM.DD>.<run-number> (e.g. v2026.05.22.7).
 # Manual dispatch is also available with a custom tag input.
+#
+# The tag is resolved BEFORE the builds, because the published program carries
+# it as its own version: the update check at startup compares that number with
+# the newest release tag, and an unstamped build would keep offering itself.
 
 on:
   push:
@@ -17,8 +21,36 @@ on:
         required: false
 
 jobs:
+  version:
+    name: Resolve version
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.resolve.outputs.tag }}
+      number: ${{ steps.resolve.outputs.number }}
+    steps:
+      - name: Resolve tag and assembly version
+        id: resolve
+        run: |
+          set -euo pipefail
+          TAG="${{ github.event.inputs.tag }}"
+          if [ -z "$TAG" ]; then
+            TAG="v$(date -u +%Y.%m.%d).${{ github.run_number }}"
+          fi
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          # -p:Version only takes numbers: "v2026.05.22.7" becomes "2026.05.22.7".
+          NUMBER="$(printf '%s' "$TAG" | sed -E 's/^[^0-9]*//; s/[^0-9.].*$//; s/\.+$//')"
+          # A tag that carries no dotted number at all still needs a version that grows with
+          # every release, or the update check would never see the new one.
+          case "$NUMBER" in
+            *.*) ;;
+            *) NUMBER="0.0.0.${{ github.run_number }}" ;;
+          esac
+          echo "number=$NUMBER" >> "$GITHUB_OUTPUT"
+          echo "Releasing $TAG as version $NUMBER"
+
   build-windows:
     name: Build Windows x64
+    needs: version
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
@@ -34,19 +66,29 @@ jobs:
             -p:PublishSingleFile=true `
             -p:EnableCompressionInSingleFile=true `
             -p:DebugType=none -p:DebugSymbols=false `
+            -p:Version=${{ needs.version.outputs.number }} `
             -o ../publish/win-x64
       - name: Zip
         shell: pwsh
         run: |
           Compress-Archive -Path publish/win-x64/* -DestinationPath all-in-1-converter-win-x64.zip
+      # The update check replaces the running file, so the release also carries the bare program.
+      # The name says which platform it is for; the .zip stays for a fresh install.
+      - name: Copy the single file for the update check
+        shell: pwsh
+        run: |
+          Copy-Item "publish/win-x64/Habbo Downloader.exe" "All-in-1 Converter win-x64.exe"
       - uses: actions/upload-artifact@v4
         with:
-          name: win-x64-zip
-          path: all-in-1-converter-win-x64.zip
+          name: win-x64
+          path: |
+            all-in-1-converter-win-x64.zip
+            All-in-1 Converter win-x64.exe
           if-no-files-found: error
 
   build-linux:
     name: Build Linux x64
+    needs: version
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -62,6 +104,7 @@ jobs:
             -p:PublishSingleFile=true \
             -p:EnableCompressionInSingleFile=true \
             -p:DebugType=none -p:DebugSymbols=false \
+            -p:Version=${{ needs.version.outputs.number }} \
             -o ../publish/linux-x64
       - name: Make binary executable + drop .desktop entry
         run: |
@@ -78,40 +121,37 @@ jobs:
       - name: Tar.gz
         run: |
           cd publish && tar -czf ../all-in-1-converter-linux-x64.tar.gz linux-x64/
+      # Same bare program for Linux. A release asset arrives without the executable bit: the
+      # update check sets it again after the file is in place, a manual download needs chmod +x.
+      - name: Copy the single file for the update check
+        run: |
+          cp "publish/linux-x64/Habbo Downloader" "All-in-1 Converter linux-x64"
       - uses: actions/upload-artifact@v4
         with:
-          name: linux-x64-tarball
-          path: all-in-1-converter-linux-x64.tar.gz
+          name: linux-x64
+          path: |
+            all-in-1-converter-linux-x64.tar.gz
+            All-in-1 Converter linux-x64
           if-no-files-found: error
 
   release:
     name: Publish GitHub Release
-    needs: [build-windows, build-linux]
+    needs: [version, build-windows, build-linux]
     runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
       - uses: actions/download-artifact@v4
         with:
-          name: win-x64-zip
-      - uses: actions/download-artifact@v4
-        with:
-          name: linux-x64-tarball
-      - name: Resolve tag
-        id: tag
-        run: |
-          if [ -n "${{ github.event.inputs.tag }}" ]; then
-            echo "value=${{ github.event.inputs.tag }}" >> "$GITHUB_OUTPUT"
-          else
-            DATE=$(date -u +%Y.%m.%d)
-            echo "value=v${DATE}.${{ github.run_number }}" >> "$GITHUB_OUTPUT"
-          fi
+          path: artifacts
+      - name: List what is released
+        run: find artifacts -type f -printf '%p  (%s bytes)\n'
       - name: Create release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ steps.tag.outputs.value }}
-          name: ${{ steps.tag.outputs.value }}
+          tag_name: ${{ needs.version.outputs.tag }}
+          name: ${{ needs.version.outputs.tag }}
           generate_release_notes: true
           files: |
-            all-in-1-converter-win-x64.zip
-            all-in-1-converter-linux-x64.tar.gz
+            artifacts/win-x64/*
+            artifacts/linux-x64/*

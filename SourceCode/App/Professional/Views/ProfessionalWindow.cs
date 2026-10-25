@@ -2,6 +2,7 @@ using System.ComponentModel;
 using System.Diagnostics;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Controls.Primitives;
 using Avalonia.Input;
 using Avalonia.Layout;
@@ -14,6 +15,7 @@ using Habbo_Downloader.App.Operations;
 using Habbo_Downloader.App.Professional.ViewModels;
 using Habbo_Downloader.App.Workspaces;
 using Habbo_Downloader.Tools;
+using Habbo_Downloader.Update;
 using static Habbo_Downloader.App.Professional.ProfessionalTheme;
 
 namespace Habbo_Downloader.App.Professional.Views;
@@ -149,7 +151,22 @@ public sealed class ProfessionalWindow : Window
             await _viewModel.DisposeAsync();
             _closed.TrySetResult();
         };
+        Opened += async (_, _) => await CheckForUpdateAsync();
         ShowDashboard();
+    }
+
+    /// <summary>
+    /// Asks GitHub at startup whether a newer version of the converter itself was released, and offers to
+    /// replace this program with it. Only the published single-file program updates itself; a repository
+    /// without releases, no internet or --no-update means nothing is shown.
+    /// </summary>
+    private async Task CheckForUpdateAsync()
+    {
+        if (await AppUpdate.CheckAsync() is not { } update) return;
+        _status.Text = $"Version {update.Version} of the converter is available.";
+        if (!await UpdateDialog.ShowAsync(this, update)) return;
+        AppUpdate.Restart("--professional");
+        (Application.Current?.ApplicationLifetime as IClassicDesktopStyleApplicationLifetime)?.Shutdown();
     }
 
     // ---------------------------------------------------------------- shell

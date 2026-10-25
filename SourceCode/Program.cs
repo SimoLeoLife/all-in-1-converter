@@ -32,6 +32,11 @@ namespace ConsoleApplication
 
             var args = Args.Parse(argv);
 
+            // An update that already ran left the previous program next to this one; the check itself
+            // happens in the Professional window and in the CLI runner, where there is someone to ask.
+            Habbo_Downloader.Update.AppUpdate.Disabled = args.NoUpdate;
+            Habbo_Downloader.Update.AppUpdate.CleanUp();
+
             if (args.ShowHelp)    { Console.WriteLine(Habbo_Downloader.App.Args.HelpText); return 0; }
             if (args.ShowVersion) { CliRunner.DisplayVersionAsync().GetAwaiter().GetResult(); return 0; }
 

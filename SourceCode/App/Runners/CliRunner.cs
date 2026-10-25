@@ -14,6 +14,15 @@ namespace Habbo_Downloader.App.Runners
     {
         public async Task RunAsync(Args args)
         {
+            // A newer release of the converter itself. Only the menu run asks the question: a --op, --command
+            // or --benchmark run is often scripted, so it just gets the notice and carries on.
+            bool interactive = !args.Benchmark && string.IsNullOrEmpty(args.Operation) && string.IsNullOrEmpty(args.Command);
+            if (await Habbo_Downloader.Update.ConsoleUpdate.OfferAsync(interactive))
+            {
+                Habbo_Downloader.Update.AppUpdate.Restart("--cli");
+                return;
+            }
+
             if (args.Benchmark)
             {
                 await Habbo_Downloader.Tools.BenchmarkRunner.RunAsync(args.BenchmarkSamples);

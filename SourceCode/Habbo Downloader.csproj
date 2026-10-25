@@ -16,6 +16,11 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <!-- The update check picks a release tag and a release asset; both are tested. -->
+    <InternalsVisibleTo Include="Habbo Downloader.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Content Include="favicon.ico" />
     <!-- config.ini is loaded by every downloader / DatabaseConfig with a
          relative path, so it must sit next to the binary in both build and

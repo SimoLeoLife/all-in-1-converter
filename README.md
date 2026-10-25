@@ -57,7 +57,29 @@ Habbo Downloader --cli      # keyboard-only mainframe CLI
 Habbo Downloader --gui      # desktop window (prompts theme)
 Habbo Downloader --help     # flags + commands
 Habbo Downloader --version  # fetched current Habbo client version
+Habbo Downloader --no-update # start without asking GitHub for a newer converter
 ```
+
+## It keeps itself up to date
+
+At startup the published binary asks GitHub for the newest release of this
+repository. When that release is newer than the running build, the new
+single-file program is downloaded, takes the place of the running file and
+starts again — nothing to unzip, nothing to copy by hand.
+
+- **Professional**: a dialog says which version is available and what is new,
+  with **Update and restart** or **Later**, and a progress bar while it
+  downloads.
+- **CLI**: the menu asks `Download it now and restart? [Y/n]` before it opens.
+  A scripted run (`--op`, `--command`, `--benchmark`, or redirected input) only
+  prints one line saying a newer version exists and carries on.
+- `--no-update` skips the check completely, for offline machines and for anyone
+  who wants to stay on this build.
+
+Only the published single-file binary replaces itself; a `dotnet run` build,
+a repository without releases and a machine without internet all mean nothing
+is asked. Your `config.ini` and every asset folder are left untouched: only
+the program file changes.
 
 ## Top-level menus
 
@@ -138,15 +160,25 @@ can double-click straight into the GUI.
 
 ## Continuous integration
 
-- `.github/workflows/build.yml` — on push / PR / manual dispatch, builds
-  both Windows and Linux targets and uploads them as 30-day artifacts.
-- `.github/workflows/release.yml` — on tag `v*` (or manual dispatch with a
-  tag input), builds both targets, zips / tar.gzs them, and publishes a
-  GitHub Release with the binaries attached.
+- `.github/workflows/build.yml` — on every pull request (or manual dispatch):
+  runs the unit tests and publishes both the Windows and the Linux
+  single-file build, so a PR that breaks either one is caught before a
+  maintainer merges it. Nothing is released from a PR.
+- `.github/workflows/release.yml` — on every push to `main` (or manual
+  dispatch with a tag input): resolves the tag
+  `v<YYYY.MM.DD>.<run-number>`, builds both targets **stamped with that
+  version**, and publishes a GitHub Release with four assets:
 
-```bash
-git tag v2.0.0 && git push origin v2.0.0   # cuts a Release with both binaries
-```
+  | Asset | For |
+  | --- | --- |
+  | `all-in-1-converter-win-x64.zip` | a fresh install on Windows |
+  | `all-in-1-converter-linux-x64.tar.gz` | a fresh install on Linux (`.desktop` entry included) |
+  | `All-in-1 Converter win-x64.exe` | the startup update check, and a bare download |
+  | `All-in-1 Converter linux-x64` | the same on Linux (`chmod +x` after a manual download) |
+
+The version has to be stamped at build time: the startup check compares the
+running build's own version with the newest release tag, so an unstamped
+build would keep offering the release it already is.
 
 ## Custom effects
 

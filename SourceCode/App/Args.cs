@@ -14,6 +14,7 @@ namespace Habbo_Downloader.App
         public string? Operation { get; set; } // optional: directly invoke a specific operation ID
         public bool Benchmark { get; set; }
         public int BenchmarkSamples { get; set; } = 30;
+        public bool NoUpdate { get; set; } // true when --no-update asked to leave GitHub alone at startup
 
         public static Args Parse(string[] argv)
         {
@@ -43,6 +44,8 @@ namespace Habbo_Downloader.App
                         a.Mode = RunMode.Cli;
                         a.ModeExplicitlySet = true;
                         break;
+                    case "--no-update":
+                    case "--skip-update": a.NoUpdate = true; break;
                     case "--help":
                     case "-h":     a.ShowHelp = true; break;
                     case "--version":
@@ -78,6 +81,7 @@ namespace Habbo_Downloader.App
             "  --op <id>          Directly execute an operation ID (e.g. tools.swf-furniture-hab)\n" +
             "  --command <name>   In CLI mode, jump straight to a top-level menu:\n" +
             "                     habbo | nitro | tools | database\n" +
+            "  --no-update        Do not ask GitHub for a newer converter at startup\n" +
             "  --version          Print fetched Habbo client version and exit\n" +
             "  --help             Show this help and exit\n";
     }

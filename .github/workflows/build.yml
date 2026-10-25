@@ -2,8 +2,9 @@ name: Build
 
 # Validation builds for pull requests and manual dispatch only.
 # Push to main goes through Release (which builds AND publishes).
-# This workflow just compiles + publishes to a temp folder to make sure the
-# PR doesn't break the cross-platform build before a maintainer merges.
+# This workflow compiles + publishes to a temp folder and runs the unit tests,
+# so a PR that breaks the cross-platform build or a test is caught before a
+# maintainer merges it.
 
 on:
   pull_request:
@@ -11,6 +12,18 @@ on:
   workflow_dispatch:
 
 jobs:
+  test:
+    name: Unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          # Installs the SDK pinned in global.json, so the two can't drift apart.
+          global-json-file: global.json
+      - name: Test
+        run: dotnet test "SourceCode.Tests/Habbo Downloader.Tests.csproj" -c Release --logger "console;verbosity=normal"
+
   build-windows:
     name: Build Windows x64
     runs-on: windows-latest
