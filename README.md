@@ -68,7 +68,8 @@ to keep notes**.
 1. **Habbo Original Downloads** — pull every official asset from the Habbo
    CDN: badges, clothes (figuredata + figuremap), effects, furnidata,
    furniture SWF, icons, MP3, productdata, quest images, reception art,
-   texts, variables. `all` runs the full bootstrap.
+   texts, variables, pets, effect icons. `all` runs every one of them in one
+   go, and names at the end any that could not finish.
 2. **Nitro Custom Downloads** — multi-source import of custom furniture /
    clothes packs.
 3. **Hotel Tools** — Merge Furnidata / Productdata / Clothesdata using

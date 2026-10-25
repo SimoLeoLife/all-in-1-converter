@@ -32,7 +32,7 @@ public static class OperationCatalog
         Op("habbo.variables", OperationCategory.HabboOriginal, "Download variables", "Download official external variable resources.", VariablesDownloader.DownloadVariablesAsync),
         Op("habbo.pets", OperationCategory.HabboOriginal, "Download pets", "Download official pet libraries as .swf and/or .hab (config.ini download_format).", PetsDownloader.DownloadPetsAsync),
         Op("habbo.effect-icons", OperationCategory.HabboOriginal, "Extract effect icons", "Extract the avatar effect icons (fx_icon_<type>) from Habbo's inventory bundle into fx_icons/.", EffectIconsExtractor.ExtractAsync),
-        Op("habbo.all", OperationCategory.HabboOriginal, "Download all", "Run the complete official asset download sequence.", DownloadAllAsync, true),
+        Op("habbo.all", OperationCategory.HabboOriginal, "Download all", "Run every download of this menu in one go: clothes, furnidata, productdata, furniture, pets, variables, texts, icons, badges, effects, MP3, quests, reception and the effect icons.", DownloadAllAsync, true),
 
         Op("nitro.furniture", OperationCategory.NitroCustom, "Download Nitro furniture", "Download custom Nitro furniture, icons and FurnitureData.json.", NitroFurnitureDownloader.DownloadFurnitureAsync, true),
         Op("nitro.clothes", OperationCategory.NitroCustom, "Download Nitro clothes", "Download custom Nitro clothes, FigureData.json and FigureMap.json.", NitroClothesDownloader.DownloadCustomClothesAsync),
@@ -91,16 +91,60 @@ public static class OperationCatalog
         await convert();
     };
 
+    /// <summary>
+    /// What "Download all" runs: every download of the Habbo Original menu, not a selection of them.
+    /// The ones the others need come first (furnidata before furniture), the rest follow in menu
+    /// order. One entry per download in the menu - a test holds the two to the same length, because
+    /// a download added to the menu and forgotten here is exactly how this sequence fell behind.
+    /// </summary>
+    public static IReadOnlyList<(string Name, Func<Task> Run)> DownloadAllSequence { get; } =
+    [
+        ("Clothes", ClothesDownloader.DownloadClothesAsync),
+        ("Furnidata", FurnidataDownloader.DownloadFurnidata),
+        ("Productdata", ProductDataDownloader.DownloadProductDataAsync),
+        ("Furniture", FurnitureDownloader.DownloadFurnitureAsync),
+        ("Pets", PetsDownloader.DownloadPetsAsync),
+        ("Variables", VariablesDownloader.DownloadVariablesAsync),
+        ("Texts", TextsDownloader.DownloadTextsAsync),
+        ("Catalogue icons", IconDownloader.DownloadIcons),
+        ("Badges", Badges.DownloadBadgesAsync),
+        ("Effects", EffectsDownloader.DownloadEffectsAsync),
+        ("MP3", Mp3Downloader.DownloadMp3sAsync),
+        ("Quest images", QuestsDownloader.DownloadQuestsAsync),
+        ("Reception images", ReceptionDownloader.DownloadReceptionImages),
+        ("Effect icons", EffectIconsExtractor.ExtractAsync)
+    ];
+
+    /// <summary>
+    /// Runs the whole sequence. A step that cannot finish - a CDN that is down, a missing import
+    /// file for the effect icons - is reported and the sequence carries on, because one missing
+    /// thing must not cut the other thirteen short.
+    /// </summary>
     private static async Task DownloadAllAsync()
     {
-        await ClothesDownloader.DownloadClothesAsync();
-        await FurnidataDownloader.DownloadFurnidata();
-        await ProductDataDownloader.DownloadProductDataAsync();
-        await FurnitureDownloader.DownloadFurnitureAsync();
-        await PetsDownloader.DownloadPetsAsync();
-        await VariablesDownloader.DownloadVariablesAsync();
-        await TextsDownloader.DownloadTextsAsync();
-        await IconDownloader.DownloadIcons();
+        IReadOnlyList<(string Name, Func<Task> Run)> steps = DownloadAllSequence;
+        List<string> unfinished = [];
+        for (int step = 0; step < steps.Count; step++)
+        {
+            Console.WriteLine();
+            Console.WriteLine($"=== [{step + 1}/{steps.Count}] {steps[step].Name} ===");
+            try
+            {
+                await steps[step].Run();
+            }
+            catch (Exception ex)
+            {
+                unfinished.Add(steps[step].Name);
+                Console.WriteLine($"{steps[step].Name} did not finish: {ex.Message}");
+                Console.WriteLine("Carrying on with the next download; run this one on its own afterwards.");
+            }
+        }
+
+        Console.WriteLine();
+        Console.WriteLine(unfinished.Count == 0
+            ? $"Download all finished: all {steps.Count} downloads done."
+            : $"Download all finished: {steps.Count - unfinished.Count} of {steps.Count} downloads done. " +
+              $"Not done: {string.Join(", ", unfinished)}.");
     }
 
     private static Task GenerateSqlAsync()

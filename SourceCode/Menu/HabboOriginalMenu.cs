@@ -102,12 +102,15 @@ namespace ConsoleApplication
                     "of one of them (for example a mirror). Output: Habbo_Default/fx_icons/fx_icon_<type>.png,\n" +
                     "for the client's avatareditor.effects.icon.url (${image.library.url}fx_icons/fx_icon_%type%.png)."),
 
-            new("all", "Download All (clothes + furni + product + ...)",
+            new("all", "Download All (every entry above, in one run)",
                 OperationCatalog.Get("habbo.all").Action,
                 HowToUse:
-                    "Runs the full bootstrap sequence in order: clothes, furnidata, productdata,\n" +
-                    "furniture SWF, variables, texts, icons. Useful when initializing a fresh\n" +
-                    "hotel - everything Merge / Generate SQL / SWF->Nitro will need afterwards."),
+                    "Runs every download of this menu, in this order: clothes, furnidata, productdata,\n" +
+                    "furniture, pets, variables, texts, catalogue icons, badges, effects, MP3, quest\n" +
+                    "images, reception images, effect icons. The ones the others need come first, so a\n" +
+                    "fresh hotel ends up with everything Merge / Generate SQL / SWF->Nitro will want.\n" +
+                    "A download that cannot finish (CDN down, no import file for the effect icons) is\n" +
+                    "named at the end and the rest still runs; you can repeat that one on its own."),
         });
 
         private static string Format => Habbo_Downloader.Tools.ConverterSettings.DownloadFormat.ToUpperInvariant();
