@@ -4,8 +4,10 @@ using Avalonia.Controls;
 using Avalonia.Controls.Templates;
 using Avalonia.Input;
 using Avalonia.Input.Platform;
+using Avalonia.Interactivity;
 using Avalonia.Layout;
 using Avalonia.Media;
+using Avalonia.Threading;
 using static Habbo_Downloader.App.Professional.ProfessionalTheme;
 
 namespace Habbo_Downloader.App.Professional.Views;
@@ -62,6 +64,19 @@ public sealed class LogView : Border
         };
         _list.TemplateApplied += (_, _) => AttachScroll();
 
+        // Only scrolling the user does decides whether the view keeps following the output. The list
+        // virtualizes, so its extent is an estimate that moves while lines are added and while the
+        // oldest ones are trimmed: an offset the list corrected on its own used to look exactly like
+        // the user scrolling up, and the output stopped following itself halfway through a download.
+        _list.AddHandler(InputElement.PointerWheelChangedEvent, (_, _) => UpdateFollowAfterInput(), RoutingStrategies.Tunnel);
+        _list.AddHandler(InputElement.PointerReleasedEvent, (_, _) => UpdateFollowAfterInput(), RoutingStrategies.Tunnel);
+        _list.AddHandler(InputElement.KeyDownEvent, (_, _) => UpdateFollowAfterInput(), RoutingStrategies.Tunnel);
+        // While the scrollbar is dragged, so the output does not fight the drag.
+        _list.AddHandler(InputElement.PointerMovedEvent, (_, e) =>
+        {
+            if (e.GetCurrentPoint(this).Properties.IsLeftButtonPressed) UpdateFollowAfterInput();
+        }, RoutingStrategies.Tunnel);
+
         _placeholder = new TextBlock
         {
             Text = "Output appears here when the operation runs.",
@@ -83,15 +98,31 @@ public sealed class LogView : Border
     public void FollowOutput()
     {
         if (!_follow || _lines.Count == 0 || _scrollPending) return;
-        // After layout, so wrapped lines are measured; output that fits stays at the top.
+        // After layout, so wrapped lines are measured; output that fits stays at the top. Loaded runs
+        // once layout is done - Background sits below input and rendering, and a download that prints
+        // ten times a second kept pushing it back.
         _scrollPending = true;
-        Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+        Dispatcher.UIThread.Post(() =>
         {
             _scrollPending = false;
             AttachScroll();
-            if (_follow) _scroll?.ScrollToEnd();
-        }, Avalonia.Threading.DispatcherPriority.Background);
+            if (!_follow || _lines.Count == 0) return;
+            // The last line may not be realized yet, and ScrollToEnd only knows the estimated extent:
+            // ScrollIntoView brings the line itself into view first.
+            _list.ScrollIntoView(_lines.Count - 1);
+            _scroll?.ScrollToEnd();
+        }, DispatcherPriority.Loaded);
     }
+
+    /// <summary>After the user scrolled: at the bottom means the output keeps following.</summary>
+    private void UpdateFollowAfterInput() =>
+        Dispatcher.UIThread.Post(() =>
+        {
+            AttachScroll();
+            if (_scroll is null) return;
+            // A line of slack, so a half-visible wrapped line still counts as the bottom.
+            _follow = _scroll.Offset.Y >= _scroll.Extent.Height - _scroll.Viewport.Height - 24;
+        }, DispatcherPriority.Input);
 
     /// <summary>Copies the selected lines (or everything) to the clipboard. Returns the number of lines.</summary>
     public async Task<int> CopyAsync(bool selectedOnly)
@@ -113,18 +144,7 @@ public sealed class LogView : Border
         _list.Selection.Clear();
     }
 
-    private void AttachScroll()
-    {
-        if (_scroll is not null) return;
-        _scroll = _list.FindDescendantScrollViewer();
-        if (_scroll is null) return;
-        // Only a scroll the user makes changes following; new lines only grow the extent.
-        _scroll.ScrollChanged += (_, e) =>
-        {
-            if (e.OffsetDelta.Y == 0) return;
-            _follow = _scroll.Offset.Y >= _scroll.Extent.Height - _scroll.Viewport.Height - 24;
-        };
-    }
+    private void AttachScroll() => _scroll ??= _list.FindDescendantScrollViewer();
 }
 
 internal static class LogViewExtensions
