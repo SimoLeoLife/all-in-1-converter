@@ -20,10 +20,14 @@ public static class ConsoleUpdate
         Console.WriteLine($"Version {update.Version} of the converter is available (you run {AppUpdate.Current}).");
         Console.ResetColor();
 
-        // An answer can only be read from a console somebody is sitting at.
+        // An answer can only be read from a console somebody is sitting at. --no-update is not the
+        // reason either way: with that flag there was no check to begin with.
         if (!ask || Console.IsInputRedirected)
         {
-            Console.WriteLine($"Download it from {update.PageUrl}, or start the converter without --no-update to install it.");
+            Console.WriteLine($"Download it from {update.PageUrl}.");
+            Console.WriteLine(Console.IsInputRedirected
+                ? "It installs itself when the converter is started in a terminal; with the input redirected it cannot ask."
+                : "Open the menu without --op / --command / --benchmark and it offers to install it by itself.");
             Console.WriteLine();
             return false;
         }
