@@ -475,6 +475,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "habbo-swf"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "flate2",
+ "habbo-core",
+ "image",
+ "tempfile",
+ "tokio",
+]
+
+[[package]]
 name = "hashbrown"
 version = "0.17.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"

@@ -1,0 +1,15 @@
+[package]
+name = "habbo-swf"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+habbo-core.workspace = true
+anyhow.workspace = true
+tokio.workspace = true
+flate2.workspace = true
+image.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true
