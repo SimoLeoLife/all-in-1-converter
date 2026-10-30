@@ -17,6 +17,7 @@ pub mod ini;
 pub mod json;
 pub mod paths;
 pub mod settings;
+pub mod summary;
 pub mod workspace;
 
 pub use console::Color;
