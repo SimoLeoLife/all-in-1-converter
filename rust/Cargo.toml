@@ -1,0 +1,49 @@
+[workspace]
+resolver = "2"
+members = ["crates/*"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+
+[workspace.dependencies]
+habbo-core = { path = "crates/core" }
+habbo-swf = { path = "crates/swf" }
+habbo-nitro = { path = "crates/nitro" }
+habbo-compilers = { path = "crates/compilers" }
+habbo-downloads = { path = "crates/downloads" }
+habbo-db = { path = "crates/db" }
+habbo-tools = { path = "crates/tools" }
+
+anyhow = "1"
+thiserror = "2"
+tokio = { version = "1.54", features = ["full"] }
+futures = "0.3"
+reqwest = { version = "0.12.28", features = ["json", "stream", "gzip"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = { version = "1.0.154", features = ["preserve_order"] }
+quick-xml = { version = "0.37", features = ["serialize"] }
+image = { version = "0.25.10", default-features = false, features = ["png", "webp", "gif", "jpeg"] }
+zip = { version = "2.6.1", default-features = false, features = ["deflate"] }
+flate2 = "1"
+rayon = "1"
+regex = "1"
+chrono = "0.4"
+uuid = { version = "1", features = ["v4"] }
+mysql_async = { version = "0.35.1", default-features = false, features = ["minimal", "native-tls-tls"] }
+eframe = { version = "0.31.1", default-features = false, features = ["glow", "default_fonts"] }
+rfd = "0.15.4"
+enable-ansi-support = "0.2"
+crossterm = "0.28"
+tempfile = "3"
+
+[profile.release]
+opt-level = 3
+lto = "thin"
+codegen-units = 1
+strip = true
+
+# Image encoding and SWF parsing are far too slow unoptimised; keep dev builds usable.
+[profile.dev.package."*"]
+opt-level = 2
