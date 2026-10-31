@@ -8,6 +8,7 @@ enum Action {
     OpenOperation(&'static OperationDefinition),
     Select(&'static OperationDefinition),
     Run,
+    Cancel,
     Done,
     Submit,
     CopyLog,
@@ -85,6 +86,12 @@ impl ProApp {
                 }
             }
             Action::Run => self.request_run(),
+            Action::Cancel => {
+                if self.is_running {
+                    self.runner.cancel();
+                    self.status_text = "Cancelling…".into();
+                }
+            }
             Action::Done => self.clear_log(),
             Action::Submit => self.submit_input(),
             Action::CopyLog => {
@@ -538,6 +545,9 @@ impl ProApp {
             if ui.add_enabled(can_run, primary_button("▶  Run operation")).clicked() {
                 actions.push(Action::Run);
             }
+            if self.is_running && ui.add(secondary_button("⏹  Cancel")).clicked() {
+                actions.push(Action::Cancel);
+            }
             if self.has_finished_run && !self.is_running && ui.add(secondary_button("Done")).clicked() {
                 actions.push(Action::Done);
             }
@@ -545,13 +555,24 @@ impl ProApp {
 
         if self.is_running {
             ui.add_space(12.0);
-            let time = ui.input(|i| i.time) as f32;
+            let progress = self.log.progress();
             let (rect, _) = ui.allocate_exact_size(vec2(ui.available_width(), 3.0), egui::Sense::hover());
             ui.painter().rect_filled(rect, 1.5, palette.hover);
-            let width = rect.width() * 0.25;
-            let x = rect.left() + ((time * 0.6).fract() * (rect.width() + width)) - width;
-            let bar = egui::Rect::from_min_max(egui::pos2(x.max(rect.left()), rect.top()), egui::pos2((x + width).min(rect.right()), rect.bottom()));
+            let bar = match progress {
+                // The operation prints its progress ("(25.0%)", "[ 10/40]"): a real bar.
+                Some(fraction) => egui::Rect::from_min_size(rect.min, vec2(rect.width() * fraction, rect.height())),
+                // Otherwise a sliding indeterminate bar.
+                None => {
+                    let time = ui.input(|i| i.time) as f32;
+                    let width = rect.width() * 0.25;
+                    let x = rect.left() + ((time * 0.6).fract() * (rect.width() + width)) - width;
+                    egui::Rect::from_min_max(egui::pos2(x.max(rect.left()), rect.top()), egui::pos2((x + width).min(rect.right()), rect.bottom()))
+                }
+            };
             ui.painter().rect_filled(bar, 1.5, Fixed::brand());
+            if let Some(fraction) = progress {
+                ui.label(RichText::new(format!("{:.0}%", fraction * 100.0)).size(11.5).color(palette.muted));
+            }
         }
 
         ui.add_space(14.0);
@@ -586,14 +607,9 @@ impl ProApp {
                     .auto_shrink([false, false])
                     .max_height(log_height - 22.0)
                     .show(ui, |ui| {
-                        let mut text = self.log.text();
-                        ui.add(
-                            egui::TextEdit::multiline(&mut text)
-                                .font(egui::FontId::monospace(12.0))
-                                .text_color(Fixed::console_text())
-                                .frame(false)
-                                .desired_width(f32::INFINITY),
-                        );
+                        // Coloured like the console; selectable, so lines can be copied.
+                        let job = self.log.layout_job(&egui::FontId::monospace(12.0), Fixed::console_text());
+                        ui.add(egui::Label::new(job).selectable(true).wrap());
                     });
             });
 

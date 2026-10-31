@@ -35,9 +35,15 @@ pub fn tick(app: &mut ProApp, ctx: &egui::Context) {
         }
         if page == "tools" {
             app.selected = catalog::find("tools.swf-furniture-hab");
-            app.log.append("🔄 Converting 3 SWF files...\n✅ Extracted: chair.json\n📦 Generated chair.hab -> SWFCompiler/furniture/hab\nStart ID: ");
-            app.has_finished_run = true;
-            app.last_run_succeeded = true;
+            app.log.append("🔄 Converting 40 SWF files...\n✅ Extracted: chair.json\n");
+            app.log.set_color(Some(habbo_core::Color::Red));
+            app.log.append("❌ Failed to convert broken_chair.swf\n");
+            app.log.set_color(Some(habbo_core::Color::Green));
+            app.log.append("📦 Generated chair.hab -> SWFCompiler/furniture/hab\n");
+            app.log.set_color(None);
+            app.log.append("⚡ [   10/40] (25.0%) |  10.8 items/sec | Converted: 10\n");
+            // Shown as running (no real task behind it).
+            app.is_running = true;
         }
         if page == "confirm" {
             app.dialog = Some(super::Dialog::Destructive(catalog::get("database.optimize")));

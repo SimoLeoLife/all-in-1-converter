@@ -34,6 +34,8 @@ const DOWNLOAD_FIELDS: &[Field] = &[
         Kind::Choice(&[("hab", ".hab only (recommended)"), ("swf", ".swf only"), ("both", ".swf and .hab")]), "both"),
     field("spritesheet_format", "Sprite sheets", "Sheet image inside .nitro and .hab bundles",
         Kind::Choice(&[("webp", "WebP lossless (recommended)"), ("png", "PNG")]), "webp"),
+    field("webp_method", "WebP compression", "Every level is lossless; lower is faster with larger files",
+        Kind::Choice(&[("6", "Maximum - smallest files (default)"), ("4", "Balanced"), ("1", "Fast - larger files")]), "6"),
     field("pet_libraries", "Pet libraries", "Comma separated. Empty: the built-in list of 36 pets", Kind::Text, ""),
 ];
 

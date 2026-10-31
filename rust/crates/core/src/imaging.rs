@@ -9,13 +9,14 @@ use image::codecs::png::{CompressionType, FilterType, PngEncoder};
 use image::codecs::webp::WebPEncoder;
 use image::{ImageEncoder, RgbaImage};
 
-/// libwebp lossless at method 6 / quality 100 with `exact` (RGB under transparent pixels kept),
-/// the settings of the C# ImageSharp encoder (Lossless, Level6, TransparentColorMode.Preserve).
+/// libwebp lossless at quality 100 with `exact` (RGB under transparent pixels kept), the
+/// settings of the C# ImageSharp encoder (Lossless, Level6, TransparentColorMode.Preserve).
+/// The method is config.ini `webp_method` (default 6, like the C#; lower is faster, larger).
 /// Falls back to the pure-Rust encoder if libwebp refuses the image.
 pub fn encode_webp_lossless(image: &RgbaImage) -> Result<Vec<u8>> {
     if let Ok(mut config) = webp::WebPConfig::new() {
         config.lossless = 1;
-        config.method = 6;
+        config.method = crate::settings::webp_method();
         config.quality = 100.0;
         config.exact = 1;
         let encoder = webp::Encoder::from_rgba(image.as_raw(), image.width(), image.height());

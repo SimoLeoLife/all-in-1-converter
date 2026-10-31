@@ -8,9 +8,10 @@ use crate::outln;
 struct Cache {
     spritesheet_format: Option<String>,
     download_format: Option<String>,
+    webp_method: Option<i32>,
 }
 
-static CACHE: RwLock<Cache> = RwLock::new(Cache { spritesheet_format: None, download_format: None });
+static CACHE: RwLock<Cache> = RwLock::new(Cache { spritesheet_format: None, download_format: None, webp_method: None });
 
 /// "webp" (default) or "png", from `spritesheet_format=` in config.ini.
 pub fn spritesheet_format() -> String {
@@ -35,6 +36,7 @@ pub fn reload() {
     let mut cache = CACHE.write().unwrap();
     cache.spritesheet_format = None;
     cache.download_format = None;
+    cache.webp_method = None;
 }
 
 pub fn use_webp() -> bool {
@@ -71,6 +73,17 @@ pub fn download_swf() -> bool {
 
 pub fn download_hab() -> bool {
     matches!(download_format().as_str(), "hab" | "both")
+}
+
+/// config.ini `webp_method`: libwebp's effort, 0 (fastest) to 6 (smallest files, the C#
+/// encoder's Level6 and the default). Every level is lossless; only speed and size change.
+pub fn webp_method() -> i32 {
+    if let Some(method) = CACHE.read().unwrap().webp_method {
+        return method;
+    }
+    let method = read_setting("webp_method").and_then(|v| v.parse::<i32>().ok()).filter(|v| (0..=6).contains(v)).unwrap_or(6);
+    CACHE.write().unwrap().webp_method = Some(method);
+    method
 }
 
 pub fn image_extension() -> &'static str {

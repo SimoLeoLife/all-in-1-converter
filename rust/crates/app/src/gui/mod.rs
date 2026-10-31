@@ -285,6 +285,11 @@ impl ProApp {
         while let Ok(event) = events.try_recv() {
             match event {
                 RunnerEvent::Output(text) => chunk.push_str(&text),
+                RunnerEvent::Color(color) => {
+                    // Text so far keeps the previous colour.
+                    self.log.append(&std::mem::take(&mut chunk));
+                    self.log.set_color(color);
+                }
                 RunnerEvent::Finished(result) => finished = Some(result),
             }
         }
@@ -297,6 +302,8 @@ impl ProApp {
             let title = self.running_title.unwrap_or("Operation");
             self.status_text = if result.succeeded {
                 format!("{title} completed in {}", duration(result.elapsed))
+            } else if result.cancelled {
+                format!("{title} cancelled after {}", duration(result.elapsed))
             } else {
                 format!("{title} failed: {}", result.error.unwrap_or_default())
             };
