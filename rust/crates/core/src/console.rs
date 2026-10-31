@@ -160,6 +160,12 @@ fn source() -> Arc<dyn Source> {
         .unwrap_or_else(|| Arc::new(TerminalSource))
 }
 
+/// Drops the terminal sink so the next write checks the console again (after the process got a
+/// new console, e.g. `AllocConsole`). A custom sink set with [`set_sink`] is dropped too.
+pub fn reinit_terminal() {
+    *SINK.write().unwrap_or_else(|e| e.into_inner()) = None;
+}
+
 /// Replaces the output sink; returns the previous one so the caller can restore it.
 pub fn set_sink(new_sink: Arc<dyn Sink>) -> Arc<dyn Sink> {
     let previous = sink();

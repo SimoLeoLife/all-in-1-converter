@@ -2,6 +2,7 @@
 //! and database tools. Professional window (egui) or classic console menus.
 
 mod args;
+mod benchmark;
 mod catalog;
 mod cli;
 mod embedded_tools;
@@ -21,6 +22,13 @@ fn main() {
 }
 
 fn real_main() -> i32 {
+    // Double-clicked: Windows gave this console exe its own console window. Hide it at once;
+    // it comes back only if the Classic CLI is picked. A terminal launch keeps its console.
+    let own_console = !launch_context::is_from_terminal();
+    if own_console {
+        launch_context::set_console_visible(false);
+    }
+
     // Unpack FFDec from the binary on first launch; no-op when it is already on disk.
     embedded_tools::ensure_extracted();
     habbo_core::workspace::runtime::load(&habbo_core::ini::default_config_path());
@@ -65,7 +73,7 @@ fn real_main() -> i32 {
     // Explorer launch -> the start window; terminal -> the mode prompt.
     let mut show_selector = false;
     if !args.mode_explicitly_set && args.command.is_none() {
-        if !launch_context::is_from_terminal() {
+        if own_console {
             args.mode = RunMode::Professional;
             show_selector = true;
         } else {
@@ -95,6 +103,9 @@ fn real_main() -> i32 {
             desktop_started = true;
             gui::run(runtime.handle().clone(), show_selector);
         } else {
+            if own_console {
+                launch_context::set_console_visible(true);
+            }
             exit_code = match runtime.block_on(cli::run(&args)) {
                 Ok(code) => code,
                 Err(error) => {
@@ -116,11 +127,15 @@ fn real_main() -> i32 {
 
 fn relaunch_professional() {
     let result = std::env::current_exe().and_then(|exe| {
-        std::process::Command::new(exe)
-            .arg("--professional")
-            .current_dir(std::env::current_dir().unwrap_or_default())
-            .spawn()
-            .map(|_| ())
+        let mut command = std::process::Command::new(exe);
+        command.arg("--professional").current_dir(std::env::current_dir().unwrap_or_default());
+        // The window needs no console: do not open (or share) one for it.
+        #[cfg(windows)]
+        {
+            use std::os::windows::process::CommandExt;
+            command.creation_flags(0x0800_0000); // CREATE_NO_WINDOW
+        }
+        command.spawn().map(|_| ())
     });
     if let Err(error) = result {
         outln!("Could not reopen the Professional window ({error}). Start the converter again with --professional.");

@@ -20,3 +20,26 @@ pub fn is_from_terminal() -> bool {
         true
     }
 }
+
+/// Closes or reopens the console Windows opened for a double-clicked exe. The exe stays a
+/// console program (the CLI and a terminal launch need one); while the Professional window is
+/// used it detaches from its console, which closes it (conhost or a Windows Terminal tab alike).
+/// Showing it again allocates a fresh console. No-op elsewhere.
+pub fn set_console_visible(visible: bool) {
+    #[cfg(windows)]
+    {
+        use windows_sys::Win32::System::Console::{AllocConsole, FreeConsole};
+        // SAFETY: plain Win32 calls without pointers.
+        unsafe {
+            if visible {
+                if AllocConsole() != 0 {
+                    habbo_core::console::reinit_terminal();
+                }
+            } else {
+                FreeConsole();
+            }
+        }
+    }
+    #[cfg(not(windows))]
+    let _ = visible;
+}

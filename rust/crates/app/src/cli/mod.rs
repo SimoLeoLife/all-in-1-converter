@@ -101,8 +101,8 @@ fn render_help_page(title: &str, items: &[MenuItem]) -> String {
 /// `CliRunner.RunAsync`.
 pub async fn run(args: &Args) -> Result<i32> {
     if args.benchmark {
-        outln!("The benchmark is not available in this build yet.");
-        return Ok(1);
+        crate::benchmark::run(args.benchmark_samples).await?;
+        return Ok(0);
     }
 
     if let Some(id) = &args.operation {

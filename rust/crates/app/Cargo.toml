@@ -26,6 +26,7 @@ zip.workspace = true
 reqwest.workspace = true
 eframe.workspace = true
 image.workspace = true
+indexmap = "2"
 rfd.workspace = true
 crossterm.workspace = true
 
