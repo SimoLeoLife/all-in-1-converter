@@ -13,6 +13,12 @@ const CREDITS: &str = "
                       (Hotel and Professional looks), catalogue ripper,
                       .NET 11 upgrade and strict JSON-only migration.
 
+    Lorenzune      -  WebP Lossless sprite sheets for every SWF -> Nitro /
+                      HAB conversion (furniture, clothes, pets, effects),
+                      the SWF decompiler, the per-run conversion and
+                      compression report, and the --benchmark suite
+                      (compression ratio + pixel fidelity).
+
     medievalshell  -  .NET 10 modernization, cross-platform refactor,
                       ImageSharp migration, the first CLI / TUI / GUI
                       shells and the GitHub Actions pipeline.
