@@ -306,6 +306,9 @@ pub struct Offer {
     pub price_credits: i32,
     pub price_activity_points: i32,
     pub activity_point_type: i32,
+    /// The int the current client sends after the points type (not in the Arcturus layout).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub extra_int: Option<i32>,
     pub giftable: bool,
     pub products: Vec<Product>,
     /// 0 none, 1 HC, 2 VIP.
@@ -410,9 +413,7 @@ fn read_offer(r: &mut Reader, layout: Layout) -> Result<Offer> {
     let price_credits = r.i32("offer credits")?;
     let price_activity_points = r.i32("offer points")?;
     let activity_point_type = r.i32("offer points type")?;
-    if layout.offer_extra_int {
-        let _ = r.i32("offer extra int")?;
-    }
+    let extra_int = if layout.offer_extra_int { Some(r.i32("offer extra int")?) } else { None };
     let giftable = r.bool("offer giftable")?;
     let count = r.count(4, "offer product count")?;
     let mut products = Vec::with_capacity(count);
@@ -438,6 +439,7 @@ fn read_offer(r: &mut Reader, layout: Layout) -> Result<Offer> {
         price_credits,
         price_activity_points,
         activity_point_type,
+        extra_int,
         giftable,
         products,
         club_level,

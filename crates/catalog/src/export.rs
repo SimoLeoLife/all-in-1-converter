@@ -611,6 +611,16 @@ pub fn arcturus_sql(catalog: &RippedCatalog, items: Option<&ItemsBase>) -> SqlFi
     let mut page_rows = Vec::with_capacity(rows.len());
     let mut item_rows = Vec::new();
     let mut seen_offers: HashSet<i32> = HashSet::new();
+    // Repeated offers get explicit ids above every Habbo offer id: an AUTO_INCREMENT (NULL) id
+    // could take a Habbo id that a later row inserts explicitly (duplicate key on import).
+    let mut next_automatic_id = rows
+        .iter()
+        .filter_map(|r| r.page)
+        .flat_map(|p| p.offers.iter().map(|o| o.offer_id))
+        .max()
+        .unwrap_or(0)
+        .max(0)
+        + 1;
     for row in &rows {
         let node = row.node;
         let layout_code = row.page.map(|p| p.layout.as_str()).unwrap_or("");
@@ -696,7 +706,8 @@ pub fn arcturus_sql(catalog: &RippedCatalog, items: Option<&ItemsBase>) -> SqlFi
                 offer.offer_id.to_string()
             } else {
                 stats.duplicate_offers += 1;
-                "NULL".into()
+                next_automatic_id += 1;
+                (next_automatic_id - 1).to_string()
             };
             let products: Vec<String> = offer
                 .products
