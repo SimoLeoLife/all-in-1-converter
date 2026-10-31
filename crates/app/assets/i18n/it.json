@@ -323,6 +323,7 @@
   "Usually 3306": "Di solito 3306",
   "Version and project information": "Versione e informazioni sul progetto",
   "Wait for the active operation to finish before closing": "Attendi la fine dell'operazione attiva prima di chiudere",
+  "WebP Lossless sprite sheets for every SWF to Nitro / HAB conversion (furniture, clothes, pets, effects), the SWF decompiler, the per-run conversion and compression report and the --benchmark suite (compression ratio and pixel fidelity).": "Sprite sheet WebP Lossless per ogni conversione da SWF a Nitro / HAB (furni, vestiti, animali, effetti), il decompilatore SWF, il report di conversione e compressione di ogni esecuzione e la suite --benchmark (rapporto di compressione e fedeltà dei pixel).",
   "WebP compression": "Compressione WebP",
   "WebP lossless (recommended)": "WebP lossless (consigliato)",
   "Welcome to your hotel!": "Benvenuto nel tuo hotel!",

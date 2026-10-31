@@ -172,6 +172,9 @@ fixed. See [docs/RUST_PORT.md](docs/RUST_PORT.md).
 ## Credits
 
 - **Life** — Rust port, .NET 11 upgrade, strict JSON-only migration, Professional dashboard.
+- **Lorenzune** — WebP Lossless sprite sheets for every SWF → Nitro / HAB conversion (furniture,
+  clothes, pets, effects), the SWF decompiler, the per-run conversion and compression report, and
+  the `--benchmark` suite (compression ratio + pixel fidelity).
 - **medievalshell** — .NET 10 modernization, cross-platform refactor, ImageSharp migration, the
   CLI / TUI / GUI shells, Mainframe + Matrix themes, GitHub Actions pipeline.
 - **duckietm** — original all-in-1 downloader, SWF → Nitro pipeline, SQL generator, database

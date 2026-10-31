@@ -8,6 +8,7 @@ const DISCORD: &str = "https://discord.gg/txfNucJv";
 /// Name and part of each author, newest work first.
 const AUTHORS: &[(&str, &str)] = &[
     ("Life", "Rust port of the whole converter, the desktop window with its Hotel and Professional looks, the catalogue ripper, .NET 11 upgrade and the strict JSON-only migration."),
+    ("Lorenzune", "WebP Lossless sprite sheets for every SWF to Nitro / HAB conversion (furniture, clothes, pets, effects), the SWF decompiler, the per-run conversion and compression report and the --benchmark suite (compression ratio and pixel fidelity)."),
     ("medievalshell", ".NET 10 modernization, cross-platform refactor, ImageSharp migration, the first CLI / TUI / GUI shells and the GitHub Actions pipeline."),
     ("duckietm", "Original all-in-1 downloader, SWF to Nitro pipeline, SQL generator and database tools; upstream maintainer, and author of the All-in-1 Installer whose look the Hotel theme follows."),
 ];
