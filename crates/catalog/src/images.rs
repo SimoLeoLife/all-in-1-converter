@@ -92,18 +92,31 @@ pub fn collect(catalog: &RippedCatalog) -> (BTreeSet<String>, BTreeSet<i32>, BTr
     (names, icons, promos)
 }
 
+/// Habbo's current image host. Old config.ini files point catalogurl at habboo-a.akamaihd.net,
+/// which no longer serves anything, so every image is also tried here.
+const CURRENT_CATALOGUE: &str = "https://images.habbo.com/c_images/catalogue";
+
 fn jobs(catalog: &RippedCatalog, out_dir: &Path, catalog_url: &str, icon_url: &str) -> Vec<Job> {
     let (names, icons, promos) = collect(catalog);
     let base = catalog_url.trim().trim_end_matches('/');
     let c_images = base.strip_suffix("/catalogue").unwrap_or(base);
     let images = out_dir.join("images");
     let mut jobs = Vec::new();
+    let mut bases = vec![base.to_string()];
+    if !base.eq_ignore_ascii_case(CURRENT_CATALOGUE) {
+        bases.push(CURRENT_CATALOGUE.to_string());
+    }
     for name in names {
-        let urls = if has_extension(&name) {
-            vec![format!("{base}/{name}")]
-        } else {
-            vec![format!("{base}/{name}.gif"), format!("{base}/{name}.png")]
-        };
+        let urls = bases
+            .iter()
+            .flat_map(|base| {
+                if has_extension(&name) {
+                    vec![format!("{base}/{name}")]
+                } else {
+                    vec![format!("{base}/{name}.gif"), format!("{base}/{name}.png")]
+                }
+            })
+            .collect();
         let stem = safe_file_name(&name);
         jobs.push(Job {
             label: name,
@@ -121,15 +134,20 @@ fn jobs(catalog: &RippedCatalog, out_dir: &Path, catalog_url: &str, icon_url: &s
         });
     }
     for promo in promos {
-        let url = if promo.starts_with("http://") || promo.starts_with("https://") {
-            promo.clone()
+        let urls = if promo.starts_with("http://") || promo.starts_with("https://") {
+            vec![promo.clone()]
         } else {
-            format!("{c_images}/{}", promo.trim_start_matches('/'))
+            let current = CURRENT_CATALOGUE.strip_suffix("/catalogue").unwrap_or(CURRENT_CATALOGUE);
+            let mut urls = vec![format!("{c_images}/{}", promo.trim_start_matches('/'))];
+            if !c_images.eq_ignore_ascii_case(current) {
+                urls.push(format!("{current}/{}", promo.trim_start_matches('/')));
+            }
+            urls
         };
         let file = promo.rsplit('/').next().unwrap_or(&promo);
         jobs.push(Job {
             label: promo.clone(),
-            urls: vec![url],
+            urls,
             dest_dir: images.join("frontpage"),
             stem: safe_file_name(file),
         });
@@ -175,6 +193,11 @@ pub async fn download(
                         };
                     }
                     Ok(None) => continue,
+                    // A dead host: try the next URL before giving up on the image.
+                    Err(e) if url != job.urls.last().unwrap() => {
+                        let _ = e;
+                        continue;
+                    }
                     Err(e) => return (job.label, Err(format!("{e:#}"))),
                 }
             }

@@ -56,7 +56,7 @@ impl Default for RipOptions {
             resend_every: Duration::from_secs(20),
             download_images: true,
             use_database: true,
-            catalog_url: "http://habboo-a.akamaihd.net/c_images/catalogue".into(),
+            catalog_url: "https://images.habbo.com/c_images/catalogue".into(),
             icon_url: "https://images.habbo.com/c_images/catalogue/icon_".into(),
             header_overrides: None,
             modes: vec!["NORMAL".into(), "BUILDERS_CLUB".into()],
