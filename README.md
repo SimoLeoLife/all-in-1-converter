@@ -54,8 +54,11 @@ it in place.
 
 1. **Habbo Original** — badges, clothes, effects, furnidata, furniture (`.swf` and/or `.hab`),
    icons, MP3, productdata, quests, reception, texts, variables, pets, effect icons, *Download
-   all*, and **Import new Habbo furniture**: compares the current furnidata with your `items_base`,
-   downloads only the new furni and writes their SQL (the database itself is not changed).
+   all*, **Import new Habbo furniture** (compares the current furnidata with your `items_base`,
+   downloads only the new furni and writes their SQL; the database itself is not changed) and
+   **Rip Habbo catalogue (G-Earth)**: with G-Earth connected to your own Habbo client, saves the
+   whole catalogue — page tree, layouts, texts, images, offers, prices — as `catalog.json`,
+   Arcturus `catalog_pages.sql` / `catalog_items.sql` and the page images in `Catalog/<hotel>_<date>/`.
 2. **Nitro Custom** — furniture and clothes from a Nitro retro (`renderer-config.json` URLs).
 3. **Hotel Tools** — merge furnidata / productdata / clothes, generate SQL (standard and Builders
    Club), compile / decompile `.nitro` and `.hab`, SWF → `.nitro` / `.hab` for furniture, clothes,
@@ -89,6 +92,7 @@ SWFCompiler/            import/, plus output folders per asset class
 Database/               Variables/ (FurnitureData.json for the fix tools), Backups/
 custom_downloads/       Nitro retro downloads
 logs/                   run history and one log per run
+Catalog/                catalogue rips (G-Earth)
 ```
 
 ## Repository
@@ -103,6 +107,7 @@ crates/downloads   Habbo and Nitro downloaders (parallel, resumable)
 crates/db          database tools, SQL generator, backups
 crates/tools       merge tools
 crates/pipeline    multi-step workflows (Import new Habbo furniture)
+crates/catalog     G-Earth extension client and catalogue ripper
 crates/app         the exe: operation catalogue, console menus, egui window, translations
 crates/golden      golden tests  →  fixtures in tests/golden/
 assets/ffdec       JPEXS FFDec, embedded into the exe at build time

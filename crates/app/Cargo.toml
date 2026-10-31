@@ -17,6 +17,7 @@ habbo-tools.workspace = true
 habbo-downloads.workspace = true
 habbo-db.workspace = true
 habbo-pipeline = { path = "../pipeline" }
+habbo-catalog = { path = "../catalog" }
 habbo-furni = { path = "../furni" }
 habbo-figure = { path = "../figure" }
 anyhow.workspace = true
