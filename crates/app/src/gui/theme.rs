@@ -55,9 +55,6 @@ impl Fixed {
     pub fn sidebar_text() -> Color32 { pick("#DCEEF8", "#C9D2E3") }
     pub fn sidebar_muted() -> Color32 { pick("#8DB6CB", "#7283A6") }
     pub fn sidebar_accent() -> Color32 { pick("#FFCD38", "#8B9BFF") }
-    /// The logo tile in the sidebar and the selector.
-    pub fn logo() -> Color32 { pick("#FFCD38", "#5A68EE") }
-    pub fn logo_text() -> Color32 { pick("#0F2D3F", "#FFFFFF") }
     pub fn console_background() -> Color32 { pick("#0B1620", "#0B101C") }
     pub fn console_text() -> Color32 { pick("#D3E2EC", "#D3DAE6") }
     pub fn console_border() -> Color32 { pick("#1F3646", "#1F293D") }

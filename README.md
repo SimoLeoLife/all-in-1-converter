@@ -50,6 +50,8 @@ it in place.
   real progress bar, **Cancel** and a **queue** (*Add to queue*: runs go one after another).
 - **Drag and drop**: drop `.swf` files to convert them, or a `.nitro` / `.hab` to look inside it
   (sheet + json); also *Open bundle…*.
+- **About** shows the installed and latest version with *Update* (the update is downloaded and swapped
+  in place), the build of the Habbo client habbo.com serves now, and the credits.
 - **Settings** edits `config.ini`: language, Habbo hotel, download and sheet format, Nitro retro
   URLs, database (with *Test connection*).
 - **Languages**: English, Italiano, Français, Deutsch, Nederlands, Español, Português (Brasil),
@@ -58,6 +60,8 @@ it in place.
 | Hotel, dark | Operation page | Professional |
 |---|---|---|
 | ![](docs/screenshots/dashboard-hotel-dark.png) | ![](docs/screenshots/tools-hotel-light.png) | ![](docs/screenshots/dashboard-professional-light.png) |
+
+![About: updates, Habbo client build and credits](docs/screenshots/about-hotel-light.png)
 
 Screenshots are made by the app itself: `HABBO_SCREENSHOT=<file.png>` with
 `HABBO_SCREENSHOT_PAGE`, `HABBO_SCREENSHOT_THEME=light|dark`, `HABBO_SCREENSHOT_LOOK=hotel|professional`

@@ -33,6 +33,12 @@ pub async fn display_version() -> Result<()> {
     Ok(())
 }
 
+/// The current Habbo client build, for the About page.
+pub async fn fetch_habbo_version() -> Result<String> {
+    let source = habbo_core::http::get_string("https://www.habbo.com/gamedata/external_variables/1").await?;
+    parse_release(&source).ok_or_else(|| anyhow::anyhow!("flash.client.url is not in the external variables"))
+}
+
 async fn habbo_version() -> String {
     match habbo_core::http::get_string("https://www.habbo.com/gamedata/external_variables/1").await {
         Ok(source) => parse_release(&source).unwrap_or_else(|| "Unknown".into()),

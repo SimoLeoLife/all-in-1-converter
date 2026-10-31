@@ -4,6 +4,7 @@
 mod app_ui;
 mod banner;
 mod history;
+mod icon;
 mod i18n;
 mod preview;
 mod flags;
@@ -54,10 +55,8 @@ pub fn run(runtime: tokio::runtime::Handle, show_selector: bool) {
         .with_title("All-in-1 Converter")
         .with_inner_size(size)
         .with_min_inner_size(min);
-    if let Ok(icon) = image::load_from_memory(include_bytes!("../../resources/app.ico")) {
-        let icon = icon.into_rgba8();
-        let (width, height) = icon.dimensions();
-        viewport = viewport.with_icon(egui::IconData { rgba: icon.into_raw(), width, height });
+    if let Some(icon) = icon::window_icon() {
+        viewport = viewport.with_icon(icon);
     }
     let options = eframe::NativeOptions {
         viewport,
@@ -105,7 +104,13 @@ enum Dialog {
 /// The background update check and install.
 #[derive(Default)]
 struct UpdateState {
-    checking: Option<mpsc::Receiver<Option<crate::update::Release>>>,
+    checking: Option<mpsc::Receiver<Result<Option<crate::update::Release>, String>>>,
+    /// The newest published release, after a check.
+    latest: Option<crate::update::Release>,
+    /// A check finished (with or without an answer).
+    checked: bool,
+    check_error: Option<String>,
+    /// `latest` when it is newer than this build.
     available: Option<crate::update::Release>,
     installing: Option<mpsc::Receiver<Result<std::path::PathBuf, String>>>,
     installed: Option<std::path::PathBuf>,
@@ -114,22 +119,39 @@ struct UpdateState {
 
 impl UpdateState {
     fn start(runtime: &tokio::runtime::Handle) -> Self {
-        if !crate::update::check_enabled() || std::env::var_os("HABBO_SCREENSHOT").is_some() {
-            return Self::default();
+        let mut state = Self::default();
+        if crate::update::check_enabled() && std::env::var_os("HABBO_SCREENSHOT").is_none() {
+            state.check(runtime);
+        }
+        state
+    }
+
+    /// Asks GitHub for the latest release (at start, and from the About page).
+    fn check(&mut self, runtime: &tokio::runtime::Handle) {
+        if self.checking.is_some() {
+            return;
         }
         let (sender, receiver) = mpsc::channel();
         runtime.spawn(async move {
-            // Offline or rate-limited: no banner, no message.
-            let _ = sender.send(crate::update::check().await.ok().flatten());
+            let _ = sender.send(crate::update::latest().await.map_err(|e| format!("{e:#}")));
         });
-        Self { checking: Some(receiver), ..Self::default() }
+        self.checking = Some(receiver);
     }
 
     fn poll(&mut self) {
         if let Some(receiver) = &self.checking {
             if let Ok(result) = receiver.try_recv() {
-                self.available = result;
                 self.checking = None;
+                self.checked = true;
+                // Offline or rate-limited: no banner; the About page shows the error.
+                match result {
+                    Ok(latest) => {
+                        self.check_error = None;
+                        self.available = latest.clone().filter(|r| crate::update::is_newer(&r.version));
+                        self.latest = latest;
+                    }
+                    Err(error) => self.check_error = Some(error),
+                }
             }
         }
         if let Some(receiver) = &self.installing {
@@ -151,6 +173,35 @@ impl UpdateState {
         runtime.spawn(async move {
             let _ = sender.send(crate::update::install(&release).await.map_err(|e| format!("{e:#}")));
         });
+    }
+}
+
+/// The current Habbo client build on the About page, fetched when the page opens.
+#[derive(Default)]
+struct HabboClientState {
+    busy: Option<mpsc::Receiver<Result<String, String>>>,
+    build: Option<Result<String, String>>,
+}
+
+impl HabboClientState {
+    fn fetch(&mut self, runtime: &tokio::runtime::Handle) {
+        if self.busy.is_some() {
+            return;
+        }
+        let (sender, receiver) = mpsc::channel();
+        runtime.spawn(async move {
+            let _ = sender.send(crate::ops::fetch_habbo_version().await.map_err(|e| format!("{e:#}")));
+        });
+        self.busy = Some(receiver);
+    }
+
+    fn poll(&mut self) {
+        if let Some(receiver) = &self.busy {
+            if let Ok(result) = receiver.try_recv() {
+                self.busy = None;
+                self.build = Some(result);
+            }
+        }
     }
 }
 
@@ -194,6 +245,7 @@ pub struct ProApp {
     pending_start: Option<(&'static OperationDefinition, Vec<String>)>,
     runtime: tokio::runtime::Handle,
     update: UpdateState,
+    habbo_client: HabboClientState,
     running_title: Option<&'static str>,
 }
 
@@ -207,6 +259,7 @@ impl ProApp {
         let mut app = Self {
             runner: OperationRunner::new(runtime.clone()),
             update: UpdateState::start(&runtime),
+            habbo_client: HabboClientState::default(),
             runtime: runtime.clone(),
             selector,
             page: Page::Dashboard,
@@ -291,6 +344,16 @@ impl ProApp {
     fn go(&mut self, page: Page) {
         self.page = page;
         match page {
+            Page::Category(OperationCategory::General) => {
+                // The About page: its checks run when it opens, once.
+                self.selected = None;
+                if !self.update.checked {
+                    self.update.check(&self.runtime);
+                }
+                if self.habbo_client.build.is_none() {
+                    self.habbo_client.fetch(&self.runtime);
+                }
+            }
             Page::Category(category) => {
                 self.selected = catalog::for_category(category).first().copied();
                 self.clear_log();
@@ -556,4 +619,9 @@ pub fn open_path(path: &Path) -> std::io::Result<()> {
     {
         std::process::Command::new("xdg-open").arg(path).spawn().map(|_| ())
     }
+}
+
+/// Opens a web page in the default browser (the system handler opens URLs too).
+pub fn open_url(url: &str) -> std::io::Result<()> {
+    open_path(Path::new(url))
 }

@@ -4,6 +4,8 @@
 use super::*;
 use super::i18n::{t, tf};
 
+mod about;
+
 enum Action {
     Navigate(Page),
     OpenOperation(&'static OperationDefinition),
@@ -29,6 +31,9 @@ enum Action {
     Status(String),
     InstallUpdate,
     RestartUpdated,
+    CheckUpdates,
+    RefreshHabboClient,
+    OpenUrl(String),
 }
 
 impl eframe::App for ProApp {
@@ -39,7 +44,8 @@ impl eframe::App for ProApp {
         self.drain_events();
         self.poll_workspace();
         self.update.poll();
-        if self.update.checking.is_some() || self.update.installing.is_some() {
+        self.habbo_client.poll();
+        if self.update.checking.is_some() || self.update.installing.is_some() || self.habbo_client.busy.is_some() {
             ctx.request_repaint_after(std::time::Duration::from_millis(250));
         }
         if self.is_running || self.workspace.busy.is_some() {
@@ -71,6 +77,7 @@ impl eframe::App for ProApp {
                             });
                         });
                     }
+                    Page::Category(OperationCategory::General) => self.about_page(ui, &mut actions),
                     Page::Category(_) => self.operation_page(ui, &mut actions),
                 }
             });
@@ -199,6 +206,13 @@ impl ProApp {
                     self.update.install(&self.runtime);
                 }
             }
+            Action::CheckUpdates => self.update.check(&self.runtime),
+            Action::RefreshHabboClient => self.habbo_client.fetch(&self.runtime),
+            Action::OpenUrl(url) => {
+                if let Err(error) = open_url(&url) {
+                    self.status_text = tf("Could not open {path}: {error}", &[("path", &url), ("error", &error.to_string())]);
+                }
+            }
             Action::RestartUpdated => {
                 if let Some(exe) = &self.update.installed {
                     match crate::update::restart(exe, &["--professional"]) {
@@ -225,7 +239,7 @@ impl ProApp {
                 ui.horizontal(|ui| {
                     ui.add_space(6.0);
                     let (rect, _) = ui.allocate_exact_size(vec2(36.0, 36.0), egui::Sense::hover());
-                    logo_tile(ui, rect, 18.0);
+                    logo_tile(ui, rect);
                     ui.vertical(|ui| {
                         let name = if theme::hotel() {
                             title_text(t("All-in-1 Converter"), 15.0).color(Fixed::sidebar_accent())
@@ -884,7 +898,7 @@ impl ProApp {
     fn selector_body(&self, ui: &mut egui::Ui, palette: &Palette, actions: &mut Vec<Action>) {
         ui.horizontal(|ui| {
             let (rect, _) = ui.allocate_exact_size(vec2(30.0, 30.0), egui::Sense::hover());
-            logo_tile(ui, rect, 15.0);
+            logo_tile(ui, rect);
             ui.label(RichText::new(t("All-in-1 Converter")).size(14.0).strong().color(palette.muted));
         });
         ui.add_space(22.0);
@@ -993,14 +1007,9 @@ fn card_heading(ui: &mut egui::Ui, palette: &Palette, title: &str, subtitle: &st
     });
 }
 
-/// The logo: a yellow tile with a dark edge in the Hotel look, an indigo tile otherwise.
-fn logo_tile(ui: &egui::Ui, rect: egui::Rect, icon_size: f32) {
-    let corner = rect.width() * 0.25;
-    ui.painter().rect_filled(rect, corner, Fixed::logo());
-    if theme::hotel() {
-        ui.painter().rect_stroke(rect, corner, egui::Stroke::new(2.0_f32, Fixed::outline()), egui::StrokeKind::Inside);
-    }
-    ui.painter().text(rect.center(), egui::Align2::CENTER_CENTER, "📦", egui::FontId::proportional(icon_size), Fixed::logo_text());
+/// The logo: the app icon.
+fn logo_tile(ui: &egui::Ui, rect: egui::Rect) {
+    super::icon::paint(ui.painter(), rect.expand(2.0));
 }
 
 /// One operation in a list: title (+ CAUTION), two lines of description, optional chevron.
