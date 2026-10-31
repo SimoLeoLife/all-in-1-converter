@@ -73,7 +73,7 @@ pub async fn offer_to_start() -> Result<bool> {
         }
     };
     start(&launcher)?;
-    outc!(Color::Green, "G-Earth started. In G-Earth press Connect, then log into Habbo with your client.");
+    outc!(Color::Green, "G-Earth started. Close your Habbo client, press Connect in G-Earth, then open the client and log in.");
     Ok(true)
 }
 
@@ -130,11 +130,36 @@ fn extract(archive: &Path, target: &Path) -> Result<()> {
     Ok(())
 }
 
+/// Starts G-Earth. On Windows it runs elevated (Windows asks first): for the Flash/AIR client
+/// G-Earth edits the hosts file, which needs administrator rights.
 fn start(launcher: &Path) -> Result<()> {
-    let dir = launcher.parent().unwrap_or(Path::new("."));
-    let mut command = std::process::Command::new(std::path::absolute(launcher)?);
-    command.current_dir(dir);
-    command.spawn().with_context(|| format!("Could not start {}", launcher.display()))?;
+    let launcher = std::path::absolute(launcher)?;
+    let dir = launcher.parent().unwrap_or(Path::new(".")).to_path_buf();
+    #[cfg(windows)]
+    {
+        // PowerShell single-quoted string: a quote is written twice.
+        let quote = |p: &Path| p.display().to_string().replace('\'', "''");
+        let script = format!(
+            "Start-Process -FilePath '{}' -WorkingDirectory '{}' -Verb RunAs",
+            quote(&launcher),
+            quote(&dir)
+        );
+        outln!("Windows will ask to let G-Earth make changes: answer Yes (it edits the hosts file).");
+        let status = std::process::Command::new("powershell")
+            .args(["-NoProfile", "-NonInteractive", "-Command", &script])
+            .status()
+            .context("Could not start G-Earth")?;
+        if !status.success() {
+            bail!("G-Earth was not started (the administrator prompt was refused or failed). Start {} as administrator yourself.", launcher.display());
+        }
+    }
+    #[cfg(not(windows))]
+    {
+        std::process::Command::new(&launcher)
+            .current_dir(&dir)
+            .spawn()
+            .with_context(|| format!("Could not start {}", launcher.display()))?;
+    }
     Ok(())
 }
 
