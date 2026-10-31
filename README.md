@@ -1,176 +1,159 @@
 # All-in-1 Converter
 
-A Habbo asset workstation that bundles every step of a hotel pipeline behind
-a single binary: download Habbo's official CDN assets, import custom packs,
-merge furnidata / clothesdata / productdata, convert SWF → Nitro, generate
-the SQL inserts for `items_base` + `catalog_items`, and fix the database in
-place.
+A Habbo asset workstation that bundles every step of a hotel pipeline behind a single binary:
+download Habbo's official assets, import custom Nitro packs, merge furnidata / clothesdata /
+productdata, convert SWF → `.nitro` / `.hab`, generate the SQL inserts for `items_base` +
+`catalog_items`, and fix the database in place.
 
-It ships with four interchangeable UI shells (same workflows behind each)
-plus a self-contained binary for Windows and Linux.
+Written in Rust. One self-contained exe for Windows and Linux (~35 MB, FFDec included), with a
+desktop window and a keyboard-only console mode behind the same operations.
 
 ## At a glance
 
 | | |
 |---|---|
-| Runtime | .NET 11 Preview 6, cross-platform (Windows x64, Linux x64) |
-| Spritesheet engine | SixLabors.ImageSharp 3.x (replaces System.Drawing) |
-| Terminal UI | Terminal.Gui 1.19 (mouse + keyboard) |
-| Desktop UI | Avalonia 12 (Professional MVVM dashboard + legacy Mainframe / Matrix) |
-| Database | MySql.Data 9.7 (MariaDB / MySQL) |
-| SWF decompiler | JPEXS Free Flash Decompiler (`Tools/ffdec/`) |
-| Data formats | Strict single-file JSON |
+| Language | Rust (stable), Windows x64 and Linux x64 |
+| Desktop window | egui, light/dark theme, 9 languages |
+| Sprite sheets | lossless WebP (libwebp) or PNG, pixel-checked |
+| Database | MariaDB / MySQL (mysql_async), automatic backups before changes |
+| SWF reader | built in; JPEXS FFDec (`assets/ffdec`, embedded) only as a fallback |
+| Data formats | strict single-file JSON |
 
-## Rust version
+## Download and run
 
-[`rust/`](rust/README.md) holds a full Rust port of the converter: every operation, the
-classic CLI menus and the Professional window (egui). Checked against this C# build on real
-Habbo files, its output is byte-for-byte the same (json, SQL, gamedata) and pixel-for-pixel
-the same (sheets). It is one 33 MB exe with FFDec inside, and converts faster. See
-[rust/README.md](rust/README.md) to build it.
-
-## Four ways to drive it
-
-The same menus and tools sit behind each shell, so anything you learn in
-one carries over.
-
-- **Professional** — the recommended native Avalonia MVVM dashboard.
-  Provides module navigation, operation cards, live status and logs, native
-  prompt input, database safety confirmations, and the operating-system theme.
-
-- **TUI** — mouse-driven mainframe terminal (Terminal.Gui).
-  IBM 3270 / CICS look, mouse + keyboard, F-keys, captured output in a
-  scrollable log pane.
-
-- **CLI** — same mainframe theme rendered with plain `Console.WriteLine`.
-  Keyboard only. Useful over SSH, piped, or in restricted terminals.
-
-- **GUI** — native desktop window (Avalonia). Two themes:
-  - **Mainframe** — cyan header bar, phosphor green body, red BACK/EXIT,
-    classic bank-terminal feel.
-  - **Matrix** — pure phosphor green on black, with a digital-rain
-    background of digits cascading behind the menus.
-
-When the Windows binary is **double-clicked from a file manager**, a native
-selector offers all four interfaces. The Linux `.desktop` entry opens its
-terminal selector so TUI and CLI remain usable. A terminal launch offers the
-same four choices. The existing shells retain the `s` menu entry for switching
-mode without restarting the process.
+Get `habbo-downloader-windows-x64.exe` (or `-linux-x64`) from the
+[releases](https://github.com/SimoLeoLife/all-in-1-converter/releases) and put it in the folder
+you want to work in. On first launch it writes `config.ini` and unpacks FFDec into `Tools/`.
 
 ```text
-Habbo Downloader            # four-interface selector
-Habbo Downloader --professional  # Professional MVVM dashboard
-Habbo Downloader --tui      # mouse mainframe TUI
-Habbo Downloader --cli      # keyboard-only mainframe CLI
-Habbo Downloader --gui      # desktop window (prompts theme)
-Habbo Downloader --help     # flags + commands
-Habbo Downloader --version  # fetched current Habbo client version
+habbo-downloader                     # double-click: start window; terminal: asks Professional or CLI
+habbo-downloader --professional      # the desktop window
+habbo-downloader --cli               # mainframe-style console menus (keyboard only, SSH friendly)
+habbo-downloader --op <id>           # run one operation, e.g. tools.swf-furniture-hab
+habbo-downloader --benchmark         # PNG vs lossless WebP sheets on a sample of your furni
+habbo-downloader --help
 ```
 
-## Top-level menus
+The app checks GitHub for a newer release at start (and from *Check for updates*) and installs
+it in place.
 
-Every menu has an auto-injected `?` entry that documents what each item
-does and what input it expects — **read it from inside the tool, no need
-to keep notes**.
+## The window
 
-1. **Habbo Original Downloads** — pull every official asset from the Habbo
-   CDN: badges, clothes (figuredata + figuremap), effects, furnidata,
-   furniture SWF, icons, MP3, productdata, quest images, reception art,
-   texts, variables. `all` runs the full bootstrap.
-2. **Nitro Custom Downloads** — multi-source import of custom furniture /
-   clothes packs.
-3. **Hotel Tools** — Merge Furnidata / Productdata / Clothesdata using
-   strict single JSON files, Generate SQL for `items_base` +
-   `catalog_items`, Decompile / Compile `.nitro` bundles, Convert Nitro PNG → WebP Lossless,
-   Decompile `.swf` assets (images, XMLs, symbols, ActionScript `.as`, audio),
-   and SWF → Nitro for Furniture / Clothes / Pets / Effects.
-4. **Database Tools** — show DB version, optimize tables, fix offer_id,
-   fix sit/lay/walk in `items_base`, fix sprite_id / item_id from JSON.
+- **Dashboard** with the modules, quick actions, recent runs (logs kept in `logs/`), your hotel and
+  asset workspace.
+- **Operation pages** with live, coloured output, an answer box for the operation's questions, a
+  real progress bar, **Cancel** and a **queue** (*Add to queue*: runs go one after another).
+- **Drag and drop**: drop `.swf` files to convert them, or a `.nitro` / `.hab` to look inside it
+  (sheet + json); also *Open bundle…*.
+- **Settings** edits `config.ini`: language, Habbo hotel, download and sheet format, Nitro retro
+  URLs, database (with *Test connection*).
+- **Languages**: English, Italiano, Français, Deutsch, Nederlands, Español, Português (Brasil),
+  Türkçe, Suomi. Operation output and the console mode stay in English.
 
-## Strict JSON IO
+## Operations
 
-Every Merge tool and the SQL Generator accepts one strict `.json` file per
-dataset. Directory manifests, split tiers, comments, trailing commas and
-alternative JSON extensions are rejected.
+1. **Habbo Original** — badges, clothes, effects, furnidata, furniture (`.swf` and/or `.hab`),
+   icons, MP3, productdata, quests, reception, texts, variables, pets, effect icons, *Download
+   all*, and **Import new Habbo furniture**: compares the current furnidata with your `items_base`,
+   downloads only the new furni and writes their SQL (the database itself is not changed).
+2. **Nitro Custom** — furniture and clothes from a Nitro retro (`renderer-config.json` URLs).
+3. **Hotel Tools** — merge furnidata / productdata / clothes, generate SQL (standard and Builders
+   Club), compile / decompile `.nitro` and `.hab`, SWF → `.nitro` / `.hab` for furniture, clothes,
+   pets and effects, Nitro → HAB, add size 32 to Habbo's `.hab` furni, decompile SWF.
+4. **Database** — server info, optimize, fix offer IDs, sit / lay / walk, sprite and item IDs,
+   interaction counts and sizes. The tools that change tables first save them to
+   `Database/Backups/<operation>_<date>.sql`.
+
+Every console menu has a `?` entry explaining its items.
 
 ## SQL generator workflow
 
-1. Drop `.nitro` (or `.swf`) files into `Generate/Furniture/` (recursive).
-2. Drop `FurnitureData.json` into `Generate/Furnidata/`.
-3. Run Hotel Tools → Generate SQL.
-4. The tool reads width / length / height / interaction count straight
-   from each `.nitro` and asks for:
-   - Starting ID for `items_base` and `catalog_items` (e.g. `select * from
-     items_base order by id desc limit 1`).
-   - `Catalog_Page` ID where you want the items.
-5. Output goes to `Generate/Output_SQL/` with a timestamp, one INSERT per
-   item.
+1. Put `.nitro` / `.hab` / `.swf` files in `Generate/default_furniture/` (or `bc_furniture/`).
+2. Put `FurnitureData.json` in `Generate/Furnidata/`.
+3. Run *Generate SQL*. Width / length / height / interactions are read from each bundle; it asks
+   for the starting ID and the catalog page ID.
+4. The SQL is written to `Generate/Output_SQL/` with a timestamp.
 
 ## Runtime layout
 
-These directories are created next to the binary on first run (do **not**
-commit them):
+Created next to the exe on first run:
 
 ```
+config.ini              settings (missing keys fall back to the defaults)
+Tools/ffdec/            FFDec, unpacked from the exe
 Habbo_Default/          downloaded official Habbo assets
-Merge/                  Original_/Import_/Merged_ for Furnidata, Productdata, Clothes
-Generate/               Furnidata/, Furniture/, Output_SQL/
-NitroCompiler/          compile/, compiled/, extract/, extracted/, convert_webp/, converted_webp/
-SWFCompiler/            import/, decompile/, decompiled/, plus output directories per asset class
-Database/Variables/     drop FurnitureData.json here for the DB fix tools
-custom_downloads/       multi-source custom downloader output
+Merge/                  Original_ / Import_ / Merged_ for furnidata, productdata, clothes
+Generate/               Furnidata/, default_furniture/, bc_furniture/, Output_SQL/
+NitroCompiler/          compile/, compiled/, extract/, extracted/
+SWFCompiler/            import/, plus output folders per asset class
+Database/               Variables/ (FurnitureData.json for the fix tools), Backups/
+custom_downloads/       Nitro retro downloads
+logs/                   run history and one log per run
+```
+
+## Repository
+
+```
+crates/core        console, config.ini, settings, paths, HTTP, FFDec, JSON, images, .NET-compatible formatting
+crates/swf         built-in SWF reader and decompiler
+crates/nitro       .nitro / .hab bundles, WebP sheets, bundle tools
+crates/furni       SWF furniture and pets → bundles
+crates/figure      SWF clothes and effects → bundles
+crates/downloads   Habbo and Nitro downloaders (parallel, resumable)
+crates/db          database tools, SQL generator, backups
+crates/tools       merge tools
+crates/pipeline    multi-step workflows (Import new Habbo furniture)
+crates/app         the exe: operation catalogue, console menus, egui window, translations
+crates/golden      golden tests  →  fixtures in tests/golden/
+assets/ffdec       JPEXS FFDec, embedded into the exe at build time
+examples/merge     sample furnidata / productdata / clothes files for the merge tools
+Addons/            custom effects, artwork, hotel backgrounds
+docs/              CONTRIBUTING.md, history of the port
+scripts/           publish-win.bat, publish-linux.sh
 ```
 
 ## Build
 
 ```bash
-cd SourceCode
-dotnet build "Habbo Downloader.csproj"          # debug build
-dotnet run -- --professional                    # run the Professional UI
+cargo build --release          # target/release/habbo-downloader(.exe)
+cargo test --workspace         # unit tests + golden tests on real Habbo files
+scripts/publish-win.bat        # or scripts/publish-linux.sh → publish/<os>-x64/
 ```
 
-Prerequisites: **.NET SDK 11 Preview 6** + **Java** (for FFDec, used by every SWF → Nitro
-path) + **Node.js** (for some helpers).
+Prerequisites: Rust stable. On Windows with the GNU toolchain, MinGW-w64 on `PATH`
+(`scoop install rustup-gnu mingw`); MSVC works too. On Linux: `pkg-config libssl-dev
+libxkbcommon-dev libgl1-mesa-dev`. Java is optional (only the FFDec fallback uses it).
 
-## Self-contained single-file releases
+## Releases
+
+Bump `version` in `Cargo.toml`, then push a matching tag; the *Release* workflow tests, builds
+both binaries and publishes them, and the app's update check finds them:
 
 ```bash
-./publish-win.bat        # → publish/win-x64/Habbo Downloader.exe (~70 MB)
-./publish-linux.sh       # → publish/linux-x64/Habbo Downloader  (~70 MB) + .desktop entry
+git tag rust-v1.1.0 && git push origin rust-v1.1.0
 ```
 
-Both scripts produce a self-contained single-file binary (no .NET runtime
-required on the target machine) with the FFDec tooling next to it. The
-Linux script also drops an `all-in-1-converter.desktop` so file managers
-can double-click straight into the GUI.
-
-## Continuous integration
-
-- `.github/workflows/build.yml` — on push / PR / manual dispatch, builds
-  both Windows and Linux targets and uploads them as 30-day artifacts.
-- `.github/workflows/release.yml` — on tag `v*` (or manual dispatch with a
-  tag input), builds both targets, zips / tar.gzs them, and publishes a
-  GitHub Release with the binaries attached.
-
-```bash
-git tag v2.0.0 && git push origin v2.0.0   # cuts a Release with both binaries
-```
+*CI* runs the tests and builds on Windows and Linux for every pull request and push to `main`.
 
 ## Custom effects
 
-Drop-in custom effects live in `Addons/Custom Effects/` — read the README
-there for the file naming convention. The Among Us pack and the Leet pack
-are included as references.
+Drop-in custom effects live in `Addons/Custom Effects/` — read the README there for the file
+naming convention. The Among Us pack and the Leet pack are included as references.
+
+## History
+
+This project started as a C# / .NET tool. It was ported to Rust and checked against the C# build
+on real Habbo files — json byte for byte, sheets pixel for pixel, SQL and gamedata byte for byte,
+database tools row for row — before the C# code was removed. The golden tests keep that output
+fixed. See [docs/RUST_PORT.md](docs/RUST_PORT.md).
 
 ## Credits
 
-- **Life** — .NET 11 upgrade, strict JSON-only migration, removal of the
-  JSON5 split layout, and the Professional Avalonia MVVM dashboard.
-- **medievalshell** — .NET 10 modernization, cross-platform refactor,
-  ImageSharp migration, the earlier JSON5 split-mode layer, three UI shells
-  (CLI / TUI / GUI), Mainframe + Matrix themes, and GitHub Actions pipeline.
-- **duckietm** — original all-in-1 downloader, SWF → Nitro pipeline, SQL
-  generator, database tools, upstream maintainer.
+- **Life** — Rust port, .NET 11 upgrade, strict JSON-only migration, Professional dashboard.
+- **medievalshell** — .NET 10 modernization, cross-platform refactor, ImageSharp migration, the
+  CLI / TUI / GUI shells, Mainframe + Matrix themes, GitHub Actions pipeline.
+- **duckietm** — original all-in-1 downloader, SWF → Nitro pipeline, SQL generator, database
+  tools, upstream maintainer.
 - **Nitro Team** — pets converter base (`discord.gg/yCXcMqrT`).
 - **AtlasOmega** — "Among Us" effects (enable 880-903).
 - **Leet** — enables 500-688.
