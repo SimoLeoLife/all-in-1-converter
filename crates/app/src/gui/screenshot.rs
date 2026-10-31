@@ -42,6 +42,22 @@ pub fn tick(app: &mut ProApp, ctx: &egui::Context) {
         if let Page::Category(c) = app.page {
             app.selected = catalog::for_category(c).first().copied();
         }
+        if page == "about" {
+            // Example answers (the checks are off in screenshot mode).
+            app.selected = None;
+            let release = crate::update::Release {
+                version: "1.1.0".into(),
+                page_url: crate::update::repo_url(),
+                asset_url: String::new(),
+                notes: "Hotel look for the window
+New About page with updates and credits
+New app icon".into(),
+            };
+            app.update.checked = true;
+            app.update.available = Some(release.clone());
+            app.update.latest = Some(release);
+            app.habbo_client.build = Some(Ok("WIN63-202610271147-806594867".into()));
+        }
         if page == "tools" {
             app.selected = catalog::find("tools.swf-furniture-hab");
             app.log.append("🔄 Converting 40 SWF files...\n✅ Extracted: chair.json\n");

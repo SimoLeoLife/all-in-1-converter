@@ -9,17 +9,17 @@ const CREDITS: &str = "
 
   AUTHORS
   -------
-    Life           -  .NET 11 upgrade, strict JSON-only migration,
-                      JSON5 split-layout removal and Professional
-                      Avalonia MVVM dashboard.
+    Life           -  Rust port of the whole converter, desktop window
+                      (Hotel and Professional looks), catalogue ripper,
+                      .NET 11 upgrade and strict JSON-only migration.
 
     medievalshell  -  .NET 10 modernization, cross-platform refactor,
-                      ImageSharp migration, original TUI/CLI/GUI shells,
-                      JSON5 split-mode layer and Avalonia desktop GUI
-                      (Mainframe + Matrix themes).
+                      ImageSharp migration, the first CLI / TUI / GUI
+                      shells and the GitHub Actions pipeline.
 
     duckietm       -  Original all-in-1 downloader / SWF -> Nitro / SQL
-                      generator / database tools. Upstream maintainer.
+                      generator / database tools. Upstream maintainer,
+                      author of the All-in-1 Installer (the Hotel look).
 
   CONTRIBUTORS
   ------------
@@ -27,13 +27,17 @@ const CREDITS: &str = "
     AtlasOmega          -  Among Us effects (Enable 880-903)
     Leet                -  Enables 500-688
 
-  STACK
-  -----
+  BUILT WITH
+  ----------
     Rust              |  tokio  |  reqwest  |  serde_json  |  mysql_async
-    image + image-webp           (sprite sheets, lossless WebP)
-    egui / eframe                (Professional desktop window)
+    libwebp                      (sprite sheets, lossless WebP)
+    egui / eframe                (desktop window)
     flate2                       (nitro / hab bundle compression)
     JPEXS Free Flash Decompiler  (Tools/ffdec - SWF extraction fallback)
+    G-Earth                      (Tools/G-Earth - catalogue ripper)
+    Ubuntu, Pixelify Sans        (fonts of the Hotel look)
+
+  Licence GPL-3.0. Everything here is free - don't get scammed.
 
 ================================================================================
 

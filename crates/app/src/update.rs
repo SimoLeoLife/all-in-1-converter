@@ -53,9 +53,19 @@ fn repo() -> String {
     settings::read_setting("update_repo").filter(|r| r.contains('/')).unwrap_or_else(|| DEFAULT_REPO.to_string())
 }
 
-/// The newest published Rust release when it is newer than this build. Uses the GitHub API;
-/// when that refuses (60 anonymous calls an hour per IP), the releases Atom feed instead.
+/// The newest published Rust release when it is newer than this build.
 pub async fn check() -> Result<Option<Release>> {
+    Ok(latest().await?.filter(|release| is_newer(&release.version)))
+}
+
+/// True when `version` is newer than this build.
+pub fn is_newer(version: &str) -> bool {
+    matches!((parse_version(version), parse_version(CURRENT_VERSION)), (Some(other), Some(current)) if other > current)
+}
+
+/// The newest published Rust release, newer than this build or not. Uses the GitHub API; when
+/// that refuses (60 anonymous calls an hour per IP), the releases Atom feed instead.
+pub async fn latest() -> Result<Option<Release>> {
     let repo = repo();
     let url = format!("https://api.github.com/repos/{repo}/releases?per_page=30");
     let response = habbo_core::http::client()
@@ -67,13 +77,18 @@ pub async fn check() -> Result<Option<Release>> {
         .context("Could not reach GitHub")?;
     let status = response.status();
     if status == reqwest::StatusCode::FORBIDDEN || status == reqwest::StatusCode::TOO_MANY_REQUESTS {
-        return Ok(newest(releases_from_feed(&repo).await?, CURRENT_VERSION));
+        return Ok(newest(releases_from_feed(&repo).await?));
     }
     if !status.is_success() {
         bail!("GitHub answered {status} for {url}");
     }
     let releases: Vec<GithubRelease> = response.json().await.context("Unexpected answer from GitHub")?;
-    Ok(newest(releases, CURRENT_VERSION))
+    Ok(newest(releases))
+}
+
+/// The repository's page on GitHub.
+pub fn repo_url() -> String {
+    format!("https://github.com/{}", repo())
 }
 
 /// Releases read from `https://github.com/<repo>/releases.atom` (no API limit). The feed has no
@@ -109,8 +124,7 @@ fn parse_feed(repo: &str, feed: &str) -> Vec<GithubRelease> {
         .collect()
 }
 
-fn newest(releases: Vec<GithubRelease>, current: &str) -> Option<Release> {
-    let current = parse_version(current)?;
+fn newest(releases: Vec<GithubRelease>) -> Option<Release> {
     releases
         .into_iter()
         .filter(|r| !r.draft && !r.prerelease)
@@ -127,7 +141,6 @@ fn newest(releases: Vec<GithubRelease>, current: &str) -> Option<Release> {
                 },
             ))
         })
-        .filter(|(version, _)| *version > current)
         .max_by(|a, b| a.0.cmp(&b.0))
         .map(|(_, release)| release)
 }
@@ -222,7 +235,7 @@ mod tests {
     }
 
     #[test]
-    fn picks_the_newest_newer_rust_release_with_our_asset() {
+    fn picks_the_newest_rust_release_with_our_asset() {
         let releases = vec![
             release("rust-v1.0.1", true, false),
             release("rust-v1.2.0", true, false),
@@ -230,8 +243,12 @@ mod tests {
             release("rust-v3.0.0", true, true),   // prerelease
             release("v9.0.0", true, false),       // the .NET build
         ];
-        assert_eq!(newest(releases, "1.0.0").map(|r| r.version).as_deref(), Some("1.2.0"));
-        assert!(newest(vec![release("rust-v1.0.0", true, false)], "1.0.0").is_none());
+        assert_eq!(newest(releases).map(|r| r.version).as_deref(), Some("1.2.0"));
+        // The latest release is reported also when it is this build; `is_newer` tells them apart.
+        assert_eq!(newest(vec![release("rust-v1.0.0", true, false)]).map(|r| r.version).as_deref(), Some("1.0.0"));
+        assert!(is_newer("99.0.0"));
+        assert!(!is_newer(CURRENT_VERSION));
+        assert!(!is_newer("0.1.0"));
         assert_eq!(parse_version("v1.2.3-beta"), Some((1, 2, 3)));
         assert_eq!(parse_version("1.10"), Some((1, 10, 0)));
     }
@@ -240,7 +257,7 @@ mod tests {
     fn feed_fallback_finds_rust_tags() {
         let feed = r#"<entry><link rel="alternate" type="text/html" href="https://github.com/o/r/releases/tag/v2026.10.20.32"/></entry>
 <entry><link rel="alternate" type="text/html" href="https://github.com/o/r/releases/tag/rust-v1.3.0"/></entry>"#;
-        let release = newest(parse_feed("o/r", feed), "1.0.0").unwrap();
+        let release = newest(parse_feed("o/r", feed)).unwrap();
         assert_eq!(release.version, "1.3.0");
         assert_eq!(release.asset_url, format!("https://github.com/o/r/releases/download/rust-v1.3.0/{ASSET_NAME}"));
     }
