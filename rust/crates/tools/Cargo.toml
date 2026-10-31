@@ -1,0 +1,14 @@
+[package]
+name = "habbo-tools"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+habbo-core.workspace = true
+anyhow.workspace = true
+tokio.workspace = true
+serde_json.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true

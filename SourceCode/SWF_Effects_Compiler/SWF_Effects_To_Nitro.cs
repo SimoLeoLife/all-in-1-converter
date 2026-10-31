@@ -1,10 +1,11 @@
-﻿using Habbo_Downloader.Tools;
+using Habbo_Downloader.Tools;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Habbo_Downloader.SWF_Effects_Compiler.Mapper.Assets;
 using Habbo_Downloader.SWF_Effects_Compiler.Spritesheet;
 using Habbo_Downloader.SWF_Effects_Compiler.Mapper.Animation;
 using Habbo_Downloader.SWFCompiler.Mapper;
+using Habbo_Downloader.App.Workspaces;
 using System.Collections.Concurrent;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
@@ -13,13 +14,24 @@ namespace Habbo_Downloader.Compiler
 {
     public static class SWF_Effects_To_Nitro
     {
-        private static readonly string ImportDirectory = Path.Combine("SWFCompiler", "import", "effects");
-        private static readonly string OutputDirectory = Path.Combine("SWFCompiler", "effects");
+        // Shared: a new options object per file throws away System.Text.Json's metadata cache.
+        private static readonly JsonSerializerOptions JsonOptions = new() { WriteIndented = true, DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull };
+
+        private static string ImportDirectory = Path.Combine("SWFCompiler", "import", "effects");
+        private static string OutputDirectory => AssetWorkspaceRuntime.Router.AssetDirectory(
+            WorkspaceAssetKind.Effects,
+            Path.Combine("SWFCompiler", "effects"));
 
         public static async Task ConvertSwfFilesAsync()
         {
             try
             {
+                Console.WriteLine("Do you want (H) Habbo_Default effects or (I) Imported effects? (Default is H):");
+                ImportDirectory = Console.ReadLine()?.Trim().ToUpper() == "I"
+                    ? Path.Combine("SWFCompiler", "import", "effects")
+                    : Tools.HabboAssetFolder.Effects.SwfSource;
+                Directory.CreateDirectory(ImportDirectory);
+
                 Console.WriteLine($"✅ Converting SWF to Nitro from source {ImportDirectory}");
 
                 Directory.CreateDirectory(OutputDirectory);
@@ -27,25 +39,74 @@ namespace Habbo_Downloader.Compiler
 
                 if (swfFiles.Length == 0)
                 {
-                    Console.WriteLine("ℹ️ No SWF files found in the import (SWFCompiler\\import\\effects) directory.");
+                    Console.WriteLine($"ℹ️ No SWF files found in {ImportDirectory}.");
                     return;
                 }
 
-                Console.WriteLine($"✅ Found {swfFiles.Length} SWF files.");
+                Console.WriteLine($"✅ Found {swfFiles.Length} effect SWF files to convert.");
 
-                var nitroFilesGenerated = new ConcurrentBag<int>();
-                int maxParallelism = (int)(Environment.ProcessorCount * 0.8);
-                if (maxParallelism < 1) maxParallelism = 1;
+                int totalFiles = swfFiles.Length;
+                int processedCount = 0;
+                int convertedCount = 0;
+                int skippedCount = 0;
+                int failedCount = 0;
+                long totalOriginalBytes = 0;
+                long totalOutputBytes = 0;
+                int maxParallelism = Math.Max(2, (int)(Environment.ProcessorCount * 0.9));
+
+                var stopwatch = System.Diagnostics.Stopwatch.StartNew();
 
                 await Parallel.ForEachAsync(swfFiles, new ParallelOptions { MaxDegreeOfParallelism = maxParallelism }, async (swfFile, _) =>
                 {
-                    if (await ProcessSwfFileAsync(swfFile))
+                    string fName = Path.GetFileNameWithoutExtension(swfFile);
+                    string targetNitroPath = AssetBundleWriter.OutputPath(OutputDirectory, fName);
+                    long swfLength = 0;
+                    try { swfLength = new FileInfo(swfFile).Length; } catch { }
+                    Interlocked.Add(ref totalOriginalBytes, swfLength);
+
+                    if (AssetBundleWriter.Exists(OutputDirectory, fName))
                     {
-                        nitroFilesGenerated.Add(1);
+                        Interlocked.Increment(ref skippedCount);
+                        try { Interlocked.Add(ref totalOutputBytes, new FileInfo(targetNitroPath).Length); } catch { }
+                    }
+                    else
+                    {
+                        bool converted = await ProcessSwfFileAsync(swfFile);
+                        if (converted && File.Exists(targetNitroPath))
+                        {
+                            Interlocked.Increment(ref convertedCount);
+                            try { Interlocked.Add(ref totalOutputBytes, new FileInfo(targetNitroPath).Length); } catch { }
+                        }
+                        else
+                        {
+                            Interlocked.Increment(ref failedCount);
+                        }
+                    }
+
+                    int current = Interlocked.Increment(ref processedCount);
+                    if (current % 25 == 0 || current == totalFiles || current <= 10)
+                    {
+                        double pct = (double)current / totalFiles * 100.0;
+                        double itemsPerSec = current / Math.Max(0.001, stopwatch.Elapsed.TotalSeconds);
+                        Console.WriteLine($"⚡ [{current,4}/{totalFiles}] ({pct,5:F1}%) | {itemsPerSec,5:F1} items/sec | Converted: {convertedCount} | Skipped: {skippedCount}");
                     }
                 });
 
-                Console.WriteLine($"✅ All SWF files have been converted. {nitroFilesGenerated.Count} nitro files were generated.");
+                stopwatch.Stop();
+
+                string formatLabel = AssetBundleWriter.Label;
+                ConversionSummaryPrinter.PrintSummary(
+                    processTitle: $"SWF Effects -> {formatLabel}",
+                    totalFiles: totalFiles,
+                    convertedFiles: convertedCount,
+                    skippedFiles: skippedCount,
+                    failedFiles: failedCount,
+                    totalOriginalBytes: totalOriginalBytes,
+                    totalOutputBytes: totalOutputBytes,
+                    elapsed: stopwatch.Elapsed,
+                    outputDirectory: AssetBundleWriter.Folder(OutputDirectory),
+                    formatName: formatLabel
+                );
             }
             catch (Exception ex)
             {
@@ -53,12 +114,10 @@ namespace Habbo_Downloader.Compiler
             }
         }
 
-        private static async Task<bool> ProcessSwfFileAsync(string swfFile)
+        public static async Task<bool> ProcessSwfFileAsync(string swfFile)
         {
             string fileName = Path.GetFileNameWithoutExtension(swfFile);
-            string nitroFilePath = Path.Combine(OutputDirectory, $"{fileName}.nitro");
-
-            if (File.Exists(nitroFilePath))
+            if (AssetBundleWriter.Exists(OutputDirectory, fileName))
                 return false; // Skip already converted files
 
             string fileOutputDirectory = Path.Combine(OutputDirectory, fileName);
@@ -66,70 +125,49 @@ namespace Habbo_Downloader.Compiler
 
             string binaryOutputPath = Path.Combine(fileOutputDirectory, $"{fileName}_binaryData");
 
-            Console.WriteLine($"🔍 Start Decompiling effects SWF: {fileName}...");
-            await FfdecExtractorEffects.ExtractSWFAsync(swfFile, binaryOutputPath);
-
-            if (!Directory.Exists(Path.Combine(binaryOutputPath, "binaryData")))
-            {
-                Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine($"❌ Error: Extraction failed for {fileName}. No binaryData folder found.");
-                Console.ResetColor();
-                return false;
-            }
-
-            string csvPath = Path.Combine(binaryOutputPath, "symbolClass", "symbols.csv");
-            var imageSources = DebugXmlParser.ParseDebugXml(csvPath);
-            var EffectsMapping = EffectXMLParser.GetEffectsImageMapping(csvPath);
-
-            if (EffectsMapping.Count == 0)
-            {
-                Console.WriteLine("⚠️ No valid effects image mappings found. Skipping sprite sheet generation.");
-            }
-
-            // Now GetAssetDataAsync returns an AssetData instance rather than a tuple.
-            var assetDataResult = await GetAssetDataAsync(binaryOutputPath, imageSources, csvPath, fileOutputDirectory);
-            // Access assets and library name via properties
-            var assetsData = assetDataResult.Assets;
-            var libraryName = assetDataResult.LibraryName; // use if needed later
-
-            var animationDataResult = await EffectAnimationMapper.ParseAnimationFileAsync(Path.Combine(binaryOutputPath, "binaryData"));
-
-            string imagesDirectory = Path.Combine(binaryOutputPath, "images");
-            string tmpDirectory = Path.Combine(binaryOutputPath, "tmp");
-            await ImageRestorer.RestoreImagesFromTmpAsync(tmpDirectory, imagesDirectory, EffectsMapping);
-            var images = LoadImages(imagesDirectory);
-
-            string? spriteSheetPath = null;
-            object? spriteSheetData = null;
-            if (images.Count > 0)
-            {
-                try
-                {
-                    var result = EffectsSpritesheetMapper.GenerateSpriteSheet(
-                        images, fileOutputDirectory, fileName, maxWidth: 10240, maxHeight: 7000
-                    );
-                    spriteSheetPath = result.ImagePath;
-                    spriteSheetData = result.SpriteData;
-                    if (spriteSheetPath == null || spriteSheetData == null)
-                    {
-                        Console.WriteLine($"⚠️ No images found to generate spritesheet for {fileName}. Spritesheet will be omitted.");
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"⚠️ Error generating spritesheet for {fileName}: {ex.Message}. Spritesheet will be omitted.");
-                }
-            }
+            Dictionary<string, Image<Rgba32>>? images = null;
 
             try
             {
+                await FfdecExtractorEffects.ExtractSWFAsync(swfFile, binaryOutputPath);
+
+                if (!Directory.Exists(Path.Combine(binaryOutputPath, "binaryData")))
+                {
+                    return false;
+                }
+
+                string csvPath = Path.Combine(binaryOutputPath, "symbolClass", "symbols.csv");
+                var imageSources = DebugXmlParser.ParseDebugXml(csvPath);
+                var EffectsMapping = EffectXMLParser.GetEffectsImageMapping(csvPath);
+
+                // Now GetAssetDataAsync returns an AssetData instance rather than a tuple.
+                var assetDataResult = await GetAssetDataAsync(binaryOutputPath, imageSources, csvPath, fileOutputDirectory);
+                var assetsData = assetDataResult.Assets;
+
+                var animationDataResult = await EffectAnimationMapper.ParseAnimationFileAsync(Path.Combine(binaryOutputPath, "binaryData"));
+
+                string imagesDirectory = Path.Combine(binaryOutputPath, "images");
+                string tmpDirectory = Path.Combine(binaryOutputPath, "tmp");
+                await ImageRestorer.RestoreImagesFromTmpAsync(tmpDirectory, imagesDirectory, EffectsMapping);
+                images = LoadImages(imagesDirectory);
+
+                string? spriteSheetPath = null;
+                object? spriteSheetData = null;
+                if (images.Count > 0)
+                {
+                    try
+                    {
+                        var result = EffectsSpritesheetMapper.GenerateSpriteSheet(
+                            images, fileOutputDirectory, fileName, maxWidth: 14000, maxHeight: 14000
+                        );
+                        spriteSheetPath = result.ImagePath;
+                        spriteSheetData = result.SpriteData;
+                    }
+                    catch { }
+                }
+
                 var jsonOutputPath = Path.Combine(fileOutputDirectory, $"{fileName}.json");
 
-                // If the manifest yielded no offset-based assets, derive the assets
-                // section from the generated spritesheet frames. The renderer looks up
-                // effect sprites by the un-prefixed name (scale_member_dir_frame) and
-                // needs an assets entry to bridge it to the library-prefixed texture;
-                // without it the effect loads but draws nothing.
                 if ((assetsData == null || assetsData.Count == 0)
                     && spriteSheetData is SpriteSheetData sheetForAssets
                     && sheetForAssets.Frames != null
@@ -153,11 +191,9 @@ namespace Habbo_Downloader.Compiler
                     if (derivedAssets.Count > 0)
                     {
                         assetsData = derivedAssets;
-                        Console.WriteLine($"ℹ️ {fileName}: no offset assets in manifest; derived {derivedAssets.Count} asset entries from the spritesheet frames.");
                     }
                 }
 
-                // If assetsData is still empty, set it to null so it is omitted.
                 if (assetsData == null || assetsData.Count == 0)
                 {
                     assetsData = null;
@@ -171,28 +207,29 @@ namespace Habbo_Downloader.Compiler
                     name = fileName,
                     spritesheet = spriteSheetData
                 },
-                new JsonSerializerOptions
-                {
-                    WriteIndented = true,
-                    DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
-                });
+                JsonOptions);
 
                 await File.WriteAllTextAsync(jsonOutputPath, jsonContent);
                 await BundleNitroFileAsync(fileOutputDirectory, fileName, OutputDirectory, spriteSheetPath);
-
-                // Optionally delete the output directory after bundling.
-                DeleteDirectory(fileOutputDirectory);
-
                 return true;
             }
-
             catch (Exception ex)
             {
                 Console.WriteLine($"❌ Error generating Nitro file for {fileName}: {ex.Message}");
                 return false;
             }
+            finally
+            {
+                if (images != null)
+                {
+                    foreach (var img in images.Values)
+                    {
+                        try { img.Dispose(); } catch { }
+                    }
+                }
+                DeleteDirectory(fileOutputDirectory);
+            }
         }
-
 
         private static Dictionary<string, Image<Rgba32>> LoadImages(string imagesDirectory)
         {
@@ -237,17 +274,8 @@ namespace Habbo_Downloader.Compiler
 
         private static async Task BundleNitroFileAsync(string outputDirectory, string fileName, string nitroOutputDirectory, string spriteSheetPath)
         {
-            var nitroBundler = new NitroBundler();
-            string jsonFilePath = Path.Combine(outputDirectory, $"{fileName}.json");
-
-            if (File.Exists(jsonFilePath))
-                nitroBundler.AddFile($"{fileName}.json", await File.ReadAllBytesAsync(jsonFilePath));
-
-            if (!string.IsNullOrEmpty(spriteSheetPath) && File.Exists(spriteSheetPath))
-                nitroBundler.AddFile(Path.GetFileName(spriteSheetPath), await File.ReadAllBytesAsync(spriteSheetPath));
-
-            await File.WriteAllBytesAsync(Path.Combine(nitroOutputDirectory, $"{fileName}.nitro"), await nitroBundler.ToBufferAsync());
-            Console.WriteLine($"📦 Generated {fileName}.nitro -> {nitroOutputDirectory}");
+            var files = await AssetBundleWriter.ReadFilesAsync(Path.Combine(outputDirectory, $"{fileName}.json"), spriteSheetPath);
+            await AssetBundleWriter.WriteAsync(nitroOutputDirectory, fileName, files);
         }
 
     private static void DeleteDirectory(string directoryPath)

@@ -1,0 +1,17 @@
+{
+  "aliases": {},
+  "animations": {
+    "Ice": {
+      "name": "fx.12",
+      "desc": "Ice",
+      "avatars": [
+        {
+          "background": "#FFFFFF",
+          "foreground": "#00FFFF",
+          "ink": 4
+        }
+      ]
+    }
+  },
+  "name": "Ice"
+}

@@ -1,0 +1,336 @@
+{
+  "assets": {
+    "h_std_fx72_1_1_0_0": {
+      "x": -11,
+      "y": 30
+    },
+    "h_std_fx72_1_1_1_0": {
+      "x": -8,
+      "y": 28
+    },
+    "h_std_fx72_1_1_2_0": {
+      "x": -9,
+      "y": 34
+    },
+    "h_std_fx72_1_1_3_0": {
+      "x": -20,
+      "y": 39
+    },
+    "h_std_fx72_1_1_4_0": {
+      "x": -11,
+      "y": 35
+    },
+    "h_std_fx72_1_1_5_0": {
+      "x": -8,
+      "y": 28
+    },
+    "h_std_fx72_1_1_6_0": {
+      "x": -10,
+      "y": 31
+    },
+    "h_std_fx72_1_1_7_0": {
+      "x": -22,
+      "y": 39
+    }
+  },
+  "aliases": {},
+  "animations": {
+    "Skateboard 2": {
+      "name": "fx.72",
+      "desc": "Skateboard 2",
+      "directions": [
+        {
+          "offset": 2
+        }
+      ],
+      "sprites": [
+        {
+          "id": "avatar"
+        },
+        {
+          "id": "fx72_1",
+          "directions": 1,
+          "member": "std_fx72_1_1",
+          "ink": 8,
+          "directionList": [
+            {
+              "id": 0,
+              "dz": -1
+            },
+            {
+              "id": 1,
+              "dz": -1
+            },
+            {
+              "id": 2,
+              "dz": -1
+            },
+            {
+              "id": 3,
+              "dz": -1
+            },
+            {
+              "id": 4,
+              "dz": -1
+            },
+            {
+              "id": 5,
+              "dz": -1
+            },
+            {
+              "id": 6,
+              "dz": -1
+            },
+            {
+              "id": 7,
+              "dz": -1
+            }
+          ]
+        }
+      ],
+      "frames": [
+        {
+          "fxs": [
+            {
+              "id": "avatar",
+              "frame": 0,
+              "dy": -10
+            },
+            {
+              "id": "fx72_1",
+              "frame": 0,
+              "dy": 10,
+              "dd": 6,
+              "action": "Default"
+            }
+          ],
+          "bodyparts": [
+            {
+              "id": "leftarm",
+              "frame": 0,
+              "action": "Default"
+            },
+            {
+              "id": "rightarm",
+              "frame": 0,
+              "action": "Default"
+            },
+            {
+              "id": "torso",
+              "frame": 0,
+              "dy": 0,
+              "action": "Default"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "name": "Skateboard2",
+  "spritesheet": {
+    "frames": {
+      "Skateboard2_h_std_fx72_1_1_0_0": {
+        "frame": {
+          "x": 2,
+          "y": 2,
+          "w": 46,
+          "h": 29
+        },
+        "rotated": false,
+        "trimmed": false,
+        "spriteSourceSize": {
+          "x": 0,
+          "y": 0,
+          "w": 46,
+          "h": 29
+        },
+        "sourceSize": {
+          "w": 46,
+          "h": 29
+        },
+        "pivot": {
+          "x": 0.5,
+          "y": 0.5
+        }
+      },
+      "Skateboard2_h_std_fx72_1_1_1_0": {
+        "frame": {
+          "x": 2,
+          "y": 33,
+          "w": 50,
+          "h": 26
+        },
+        "rotated": false,
+        "trimmed": false,
+        "spriteSourceSize": {
+          "x": 0,
+          "y": 0,
+          "w": 50,
+          "h": 26
+        },
+        "sourceSize": {
+          "w": 50,
+          "h": 26
+        },
+        "pivot": {
+          "x": 0.5,
+          "y": 0.5
+        }
+      },
+      "Skateboard2_h_std_fx72_1_1_2_0": {
+        "frame": {
+          "x": 2,
+          "y": 61,
+          "w": 45,
+          "h": 34
+        },
+        "rotated": false,
+        "trimmed": false,
+        "spriteSourceSize": {
+          "x": 0,
+          "y": 0,
+          "w": 45,
+          "h": 34
+        },
+        "sourceSize": {
+          "w": 45,
+          "h": 34
+        },
+        "pivot": {
+          "x": 0.5,
+          "y": 0.5
+        }
+      },
+      "Skateboard2_h_std_fx72_1_1_3_0": {
+        "frame": {
+          "x": 2,
+          "y": 97,
+          "w": 25,
+          "h": 40
+        },
+        "rotated": false,
+        "trimmed": false,
+        "spriteSourceSize": {
+          "x": 0,
+          "y": 0,
+          "w": 25,
+          "h": 40
+        },
+        "sourceSize": {
+          "w": 25,
+          "h": 40
+        },
+        "pivot": {
+          "x": 0.5,
+          "y": 0.5
+        }
+      },
+      "Skateboard2_h_std_fx72_1_1_4_0": {
+        "frame": {
+          "x": 2,
+          "y": 139,
+          "w": 45,
+          "h": 34
+        },
+        "rotated": false,
+        "trimmed": false,
+        "spriteSourceSize": {
+          "x": 0,
+          "y": 0,
+          "w": 45,
+          "h": 34
+        },
+        "sourceSize": {
+          "w": 45,
+          "h": 34
+        },
+        "pivot": {
+          "x": 0.5,
+          "y": 0.5
+        }
+      },
+      "Skateboard2_h_std_fx72_1_1_5_0": {
+        "frame": {
+          "x": 2,
+          "y": 175,
+          "w": 50,
+          "h": 26
+        },
+        "rotated": false,
+        "trimmed": false,
+        "spriteSourceSize": {
+          "x": 0,
+          "y": 0,
+          "w": 50,
+          "h": 26
+        },
+        "sourceSize": {
+          "w": 50,
+          "h": 26
+        },
+        "pivot": {
+          "x": 0.5,
+          "y": 0.5
+        }
+      },
+      "Skateboard2_h_std_fx72_1_1_6_0": {
+        "frame": {
+          "x": 2,
+          "y": 203,
+          "w": 46,
+          "h": 29
+        },
+        "rotated": false,
+        "trimmed": false,
+        "spriteSourceSize": {
+          "x": 0,
+          "y": 0,
+          "w": 46,
+          "h": 29
+        },
+        "sourceSize": {
+          "w": 46,
+          "h": 29
+        },
+        "pivot": {
+          "x": 0.5,
+          "y": 0.5
+        }
+      },
+      "Skateboard2_h_std_fx72_1_1_7_0": {
+        "frame": {
+          "x": 2,
+          "y": 234,
+          "w": 25,
+          "h": 38
+        },
+        "rotated": false,
+        "trimmed": false,
+        "spriteSourceSize": {
+          "x": 0,
+          "y": 0,
+          "w": 25,
+          "h": 38
+        },
+        "sourceSize": {
+          "w": 25,
+          "h": 38
+        },
+        "pivot": {
+          "x": 0.5,
+          "y": 0.5
+        }
+      }
+    },
+    "meta": {
+      "image": "Skateboard2.webp",
+      "format": "RGBA8888",
+      "size": {
+        "w": 54,
+        "h": 274
+      },
+      "scale": 1,
+      "converter": "All-in-1-dowload-tool"
+    }
+  }
+}

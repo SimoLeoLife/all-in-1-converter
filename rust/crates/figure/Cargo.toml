@@ -1,0 +1,20 @@
+[package]
+name = "habbo-figure"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+habbo-core.workspace = true
+habbo-nitro.workspace = true
+habbo-swf.workspace = true
+anyhow.workspace = true
+tokio.workspace = true
+futures.workspace = true
+image.workspace = true
+regex.workspace = true
+indexmap = "2"
+roxmltree = "0.20"
+
+[dev-dependencies]
+tempfile.workspace = true

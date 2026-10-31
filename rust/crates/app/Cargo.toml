@@ -1,0 +1,48 @@
+[package]
+name = "habbo-app"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+build = "build.rs"
+
+[[bin]]
+name = "habbo-downloader"
+path = "src/main.rs"
+
+[dependencies]
+habbo-core.workspace = true
+habbo-nitro.workspace = true
+habbo-swf.workspace = true
+habbo-tools.workspace = true
+habbo-downloads.workspace = true
+habbo-db.workspace = true
+habbo-pipeline = { path = "../pipeline" }
+habbo-furni = { path = "../furni" }
+habbo-figure = { path = "../figure" }
+anyhow.workspace = true
+tokio.workspace = true
+futures.workspace = true
+chrono.workspace = true
+zip.workspace = true
+reqwest.workspace = true
+eframe.workspace = true
+image = { workspace = true, features = ["ico"] }
+indexmap = "2"
+rfd.workspace = true
+crossterm.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+sys-locale = "0.3"
+
+[target.'cfg(windows)'.dependencies]
+windows-sys = { version = "0.59", features = ["Win32_System_Console"] }
+
+[target.'cfg(unix)'.dependencies]
+libc = "0.2"
+
+[build-dependencies]
+zip = { workspace = true }
+embed-resource = "3"
+
+[dev-dependencies]
+tempfile.workspace = true

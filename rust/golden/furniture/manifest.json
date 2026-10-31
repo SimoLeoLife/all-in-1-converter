@@ -1,0 +1,54 @@
+{
+  "antique_c21_wallclock": [
+    "antique_c21_wallclock.json",
+    "antique_c21_wallclock.webp"
+  ],
+  "army_c15_teledoor": [
+    "army_c15_teledoor.json",
+    "army_c15_teledoor.webp"
+  ],
+  "bb_score_b": [
+    "bb_score_b.json",
+    "bb_score_b.webp"
+  ],
+  "bed_polyfon": [
+    "bed_polyfon.json",
+    "bed_polyfon.webp"
+  ],
+  "duck": [
+    "duck.json",
+    "duck.webp"
+  ],
+  "edice": [
+    "edice.json",
+    "edice.webp"
+  ],
+  "fireworks_01": [
+    "fireworks_01.json",
+    "fireworks_01.webp"
+  ],
+  "prizetrophy": [
+    "prizetrophy.json",
+    "prizetrophy.webp"
+  ],
+  "queue_tile1": [
+    "queue_tile1.json",
+    "queue_tile1.webp"
+  ],
+  "rare_dragonlamp": [
+    "rare_dragonlamp.json",
+    "rare_dragonlamp.webp"
+  ],
+  "roomdimmer": [
+    "roomdimmer.json",
+    "roomdimmer.webp"
+  ],
+  "window_basic": [
+    "window_basic.json",
+    "window_basic.webp"
+  ],
+  "xmas_light": [
+    "xmas_light.json",
+    "xmas_light.webp"
+  ]
+}

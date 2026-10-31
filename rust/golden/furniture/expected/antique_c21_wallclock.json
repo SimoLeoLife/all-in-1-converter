@@ -1,0 +1,283 @@
+{
+  "name": "antique_c21_wallclock",
+  "logicType": "furniture_multistate",
+  "visualizationType": "furniture_animated",
+  "assets": {
+    "antique_c21_wallclock_64_sd_0_0": {
+      "x": 25,
+      "y": 13
+    },
+    "antique_c21_wallclock_64_a_0_0": {
+      "x": 31,
+      "y": 105
+    },
+    "antique_c21_wallclock_64_a_0_1": {
+      "x": 31,
+      "y": 105
+    },
+    "antique_c21_wallclock_64_a_0_2": {
+      "x": 31,
+      "y": 105
+    },
+    "antique_c21_wallclock_icon_a": {
+      "x": 6,
+      "y": 12
+    },
+    "antique_c21_wallclock_64_sd_2_0": {
+      "source": "antique_c21_wallclock_64_sd_0_0",
+      "x": 25,
+      "y": 13,
+      "flipH": true
+    },
+    "antique_c21_wallclock_64_a_2_0": {
+      "source": "antique_c21_wallclock_64_a_0_0",
+      "x": 31,
+      "y": 105,
+      "flipH": true
+    },
+    "antique_c21_wallclock_64_a_2_1": {
+      "source": "antique_c21_wallclock_64_a_0_1",
+      "x": 31,
+      "y": 105,
+      "flipH": true
+    },
+    "antique_c21_wallclock_64_a_2_2": {
+      "source": "antique_c21_wallclock_64_a_0_2",
+      "x": 31,
+      "y": 105,
+      "flipH": true
+    }
+  },
+  "logic": {
+    "model": {
+      "dimensions": {
+        "x": 1,
+        "y": 1,
+        "z": 0
+      },
+      "directions": [
+        0,
+        90
+      ]
+    },
+    "particleSystems": [
+      {
+        "size": 64
+      }
+    ]
+  },
+  "visualizations": [
+    {
+      "angle": 360,
+      "layerCount": 1,
+      "size": 1,
+      "layers": {},
+      "directions": {},
+      "animations": {
+        "0": {
+          "layers": {
+            "0": {}
+          }
+        }
+      },
+      "colors": {}
+    },
+    {
+      "angle": 45,
+      "layerCount": 1,
+      "size": 32,
+      "layers": {},
+      "directions": {
+        "0": {
+          "layers": {}
+        },
+        "2": {
+          "layers": {}
+        }
+      },
+      "colors": {}
+    },
+    {
+      "angle": 45,
+      "layerCount": 1,
+      "size": 64,
+      "layers": {},
+      "directions": {
+        "0": {
+          "layers": {}
+        },
+        "2": {
+          "layers": {}
+        }
+      },
+      "animations": {
+        "0": {
+          "layers": {
+            "0": {
+              "frameRepeat": 4,
+              "loopCount": 0,
+              "frameSequences": {
+                "0": {
+                  "frames": {
+                    "0": {
+                      "id": 0
+                    },
+                    "1": {
+                      "id": 1
+                    },
+                    "2": {
+                      "id": 0
+                    },
+                    "3": {
+                      "id": 2
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "1": {
+          "layers": {
+            "0": {}
+          }
+        }
+      },
+      "colors": {}
+    }
+  ],
+  "spritesheet": {
+    "frames": {
+      "antique_c21_wallclock_antique_c21_wallclock_64_a_0_0": {
+        "frame": {
+          "x": 2,
+          "y": 2,
+          "w": 35,
+          "h": 68
+        },
+        "rotated": false,
+        "trimmed": false,
+        "spriteSourceSize": {
+          "x": 0,
+          "y": 0,
+          "w": 35,
+          "h": 68
+        },
+        "sourceSize": {
+          "w": 35,
+          "h": 68
+        },
+        "pivot": {
+          "x": 0.5,
+          "y": 0.5
+        }
+      },
+      "antique_c21_wallclock_antique_c21_wallclock_64_a_0_1": {
+        "frame": {
+          "x": 2,
+          "y": 72,
+          "w": 35,
+          "h": 68
+        },
+        "rotated": false,
+        "trimmed": false,
+        "spriteSourceSize": {
+          "x": 0,
+          "y": 0,
+          "w": 35,
+          "h": 68
+        },
+        "sourceSize": {
+          "w": 35,
+          "h": 68
+        },
+        "pivot": {
+          "x": 0.5,
+          "y": 0.5
+        }
+      },
+      "antique_c21_wallclock_antique_c21_wallclock_64_a_0_2": {
+        "frame": {
+          "x": 2,
+          "y": 142,
+          "w": 35,
+          "h": 68
+        },
+        "rotated": false,
+        "trimmed": false,
+        "spriteSourceSize": {
+          "x": 0,
+          "y": 0,
+          "w": 35,
+          "h": 68
+        },
+        "sourceSize": {
+          "w": 35,
+          "h": 68
+        },
+        "pivot": {
+          "x": 0.5,
+          "y": 0.5
+        }
+      },
+      "antique_c21_wallclock_antique_c21_wallclock_64_sd_0_0": {
+        "frame": {
+          "x": 2,
+          "y": 212,
+          "w": 26,
+          "h": 13
+        },
+        "rotated": false,
+        "trimmed": false,
+        "spriteSourceSize": {
+          "x": 0,
+          "y": 0,
+          "w": 26,
+          "h": 13
+        },
+        "sourceSize": {
+          "w": 26,
+          "h": 13
+        },
+        "pivot": {
+          "x": 0.5,
+          "y": 0.5
+        }
+      },
+      "antique_c21_wallclock_antique_c21_wallclock_icon_a": {
+        "frame": {
+          "x": 2,
+          "y": 227,
+          "w": 14,
+          "h": 27
+        },
+        "rotated": false,
+        "trimmed": false,
+        "spriteSourceSize": {
+          "x": 0,
+          "y": 0,
+          "w": 14,
+          "h": 27
+        },
+        "sourceSize": {
+          "w": 14,
+          "h": 27
+        },
+        "pivot": {
+          "x": 0.5,
+          "y": 0.5
+        }
+      }
+    },
+    "meta": {
+      "image": "antique_c21_wallclock.webp",
+      "format": "RGBA8888",
+      "size": {
+        "w": 39,
+        "h": 256
+      },
+      "scale": 1,
+      "converter": "All-in-1-download-tool"
+    }
+  }
+}

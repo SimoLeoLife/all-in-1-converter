@@ -1,0 +1,32 @@
+{
+  "Dance1": [
+    "Dance1.json"
+  ],
+  "Flies": [
+    "Flies.json",
+    "Flies.webp"
+  ],
+  "Hide": [
+    "Hide.json",
+    "Hide.webp"
+  ],
+  "Holo": [
+    "Holo.json",
+    "Holo.webp"
+  ],
+  "Ice": [
+    "Ice.json"
+  ],
+  "Pinata": [
+    "Pinata.json",
+    "Pinata.webp"
+  ],
+  "Skateboard2": [
+    "Skateboard2.json",
+    "Skateboard2.webp"
+  ],
+  "Swimming": [
+    "Swimming.json",
+    "Swimming.webp"
+  ]
+}

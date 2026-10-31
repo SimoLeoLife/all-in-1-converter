@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -11,6 +11,32 @@ namespace Habbo_Downloader.SWFCompiler.Mapper.Spritesheets
 {
     public static class SpriteSheetMapper
     {
+        private const int FramePadding = 2;
+        private const int EdgeExtrude = 1;
+
+        private static void ExtrudeEdges(Image<Rgba32> sheet, Image<Rgba32> sprite, int drawX, int drawY)
+        {
+            int w = sprite.Width;
+            int h = sprite.Height;
+
+            for (int x = 0; x < w; x++)
+            {
+                sheet[drawX + x, drawY - EdgeExtrude] = sprite[x, 0];
+                sheet[drawX + x, drawY + h] = sprite[x, h - 1];
+            }
+
+            for (int y = 0; y < h; y++)
+            {
+                sheet[drawX - EdgeExtrude, drawY + y] = sprite[0, y];
+                sheet[drawX + w, drawY + y] = sprite[w - 1, y];
+            }
+
+            sheet[drawX - EdgeExtrude, drawY - EdgeExtrude] = sprite[0, 0];
+            sheet[drawX + w, drawY - EdgeExtrude] = sprite[w - 1, 0];
+            sheet[drawX - EdgeExtrude, drawY + h] = sprite[0, h - 1];
+            sheet[drawX + w, drawY + h] = sprite[w - 1, h - 1];
+        }
+
         // If disableCleanKey is false, duplicate prefixes are removed.
         // If true, the asset key is left intact.
 
@@ -41,8 +67,8 @@ namespace Habbo_Downloader.SWFCompiler.Mapper.Spritesheets
             Dictionary<string, string> canonicalMapping, // new parameter
             bool disableCleanKey = false, // control cleaning
             int numRows = 10,
-            int maxWidth = 7500,
-            int maxHeight = 12500)
+            int maxWidth = 14000,
+            int maxHeight = 14000)
         {
             if (images == null || images.Count == 0)
             {
@@ -55,7 +81,7 @@ namespace Habbo_Downloader.SWFCompiler.Mapper.Spritesheets
             int imagesPerRow = (int)Math.Ceiling((double)imagesCount / numRows);
 
             int maxRowWidth = 0;
-            int maxRowHeight = 0;
+            int stackedRowHeight = 0;
 
             // Group images into rows.
             var imageGroups = images.Values
@@ -63,17 +89,21 @@ namespace Habbo_Downloader.SWFCompiler.Mapper.Spritesheets
                 .GroupBy(x => x.Index / imagesPerRow)
                 .ToList();
 
-            // Determine maximum row dimensions.
+            // Determine maximum row dimensions (every sprite reserves
+            // FramePadding after it; each row/sheet starts with one too).
             foreach (var group in imageGroups)
             {
-                int rowWidth = group.Sum(x => x.Image.Width);
+                int rowWidth = FramePadding + group.Sum(x => x.Image.Width + FramePadding);
                 int rowHeight = group.Max(x => x.Image.Height);
                 maxRowWidth = Math.Max(maxRowWidth, rowWidth);
-                maxRowHeight = Math.Max(maxRowHeight, rowHeight);
+                stackedRowHeight += rowHeight + FramePadding;
             }
 
             int totalWidth = maxRowWidth;
-            int totalHeight = imageGroups.Count * maxRowHeight;
+            // Each row is only as tall as its own sprites, which is exactly how the draw loop
+            // below advances, so sizing the canvas by the tallest row times the row count used
+            // to reserve rows nothing is ever drawn into.
+            int totalHeight = FramePadding + stackedRowHeight;
 
             if (totalWidth > maxWidth || totalHeight > maxHeight)
             {
@@ -85,11 +115,12 @@ namespace Habbo_Downloader.SWFCompiler.Mapper.Spritesheets
             // Create the sprite sheet (ImageSharp Image<Rgba32> defaults to transparent pixels).
             using var spriteSheet = new Image<Rgba32>(totalWidth, totalHeight);
 
+            string ext = Tools.ConverterSettings.ResolveSheetExtension(totalWidth, totalHeight, name);
             var spriteSheetData = new SpriteSheetData
             {
                 Meta = new MetaData
                 {
-                    Image = $"{name}.png",
+                    Image = $"{name}{ext}",
                     Size = new SizeData { Width = totalWidth, Height = totalHeight },
                     Scale = 1.0f,
                     Format = "RGBA8888",
@@ -98,17 +129,18 @@ namespace Habbo_Downloader.SWFCompiler.Mapper.Spritesheets
                 Frames = new Dictionary<string, FrameData>()
             };
 
-            int currentY = 0;
+            int currentY = FramePadding;
             int imageIndex = 0;
+            var keys = images.Keys.ToList();
             foreach (var group in imageGroups)
             {
-                int currentX = 0;
+                int currentX = FramePadding;
                 int rowHeight = 0;
 
                 foreach (var imageItem in group)
                 {
                     var image = imageItem.Image;
-                    var key = images.Keys.ElementAt(imageIndex);
+                    var key = keys[imageIndex];
                     string shortKey = CleanAssetName(key, disableCleanKey: false);
                     string finalKey = canonicalMapping.ContainsKey(shortKey)
                         ? canonicalMapping[shortKey]
@@ -118,6 +150,7 @@ namespace Habbo_Downloader.SWFCompiler.Mapper.Spritesheets
                     int drawX = currentX;
                     int drawY = currentY;
                     spriteSheet.Mutate(ctx => ctx.DrawImage(image, new Point(drawX, drawY), 1f));
+                    ExtrudeEdges(spriteSheet, image, drawX, drawY);
 
                     var frameData = new FrameData
                     {
@@ -151,15 +184,22 @@ namespace Habbo_Downloader.SWFCompiler.Mapper.Spritesheets
 
                     spriteSheetData.Frames[finalKey] = frameData;
 
-                    currentX += image.Width;
+                    currentX += image.Width + FramePadding;
                     rowHeight = Math.Max(rowHeight, image.Height);
                     imageIndex++;
                 }
-                currentY += rowHeight;
+                currentY += rowHeight + FramePadding;
             }
 
-            string imagePath = Path.Combine(outputDirectory, $"{name}.png");
-            spriteSheet.SaveAsPng(imagePath);
+            string imagePath = Path.Combine(outputDirectory, $"{name}{ext}");
+            if (ext == ".webp")
+            {
+                spriteSheet.SaveAsWebp(imagePath, Tools.ConverterSettings.OptimalWebpEncoder);
+            }
+            else
+            {
+                spriteSheet.SaveAsPng(imagePath);
+            }
 
             return (imagePath, spriteSheetData);
         }

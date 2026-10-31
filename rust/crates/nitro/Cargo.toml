@@ -1,0 +1,20 @@
+[package]
+name = "habbo-nitro"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+habbo-core.workspace = true
+anyhow.workspace = true
+tokio.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+flate2.workspace = true
+image.workspace = true
+base64 = "0.22"
+rayon.workspace = true
+chrono.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true

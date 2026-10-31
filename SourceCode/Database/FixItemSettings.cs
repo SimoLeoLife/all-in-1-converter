@@ -40,12 +40,14 @@ namespace ConsoleApplication.FixSettings
 
         public static async Task RunAsync()
         {
-            const string jsonFilePath = "./Database/Variables/FurnitureData.json";
+            string jsonFilePath = Habbo_Downloader.App.Workspaces.AssetWorkspaceRuntime.Router.GameDataFile(
+                "FurnitureData.json",
+                "./Database/Variables/FurnitureData.json");
             if (!File.Exists(jsonFilePath))
             {
                 lock (consoleLock)
                 {
-                    Console.WriteLine($"⚠️ Please place FurnitureData.json in the /Database/Variables/ directory");
+                    Console.WriteLine($"⚠️ FurnitureData.json not found: {jsonFilePath}");
                 }
                 return;
             }
@@ -156,7 +158,8 @@ namespace ConsoleApplication.FixSettings
 
             int processedBatches = 0;
             int totalBatches = (int)Math.Ceiling(totalToUpdate / 100.0);
-            System.Timers.Timer timer = new System.Timers.Timer(500);
+            // using: an error (e.g. no database connection) must not leave the progress timer printing forever.
+            using var timer = new System.Timers.Timer(500);
             timer.Elapsed += (sender, e) =>
             {
                 lock (consoleLock)

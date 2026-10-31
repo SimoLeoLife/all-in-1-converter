@@ -1,0 +1,3 @@
+# The expected files are the C# tool's exact bytes (json and SQL with Windows CRLF line ends);
+# git must never rewrite them.
+* -text

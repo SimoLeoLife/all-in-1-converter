@@ -1,0 +1,724 @@
+{
+  "name": "bed_polyfon",
+  "logicType": "furniture_basic",
+  "visualizationType": "furniture_static",
+  "assets": {
+    "bed_polyfon_64_a_0_0": {
+      "x": 67,
+      "y": 43
+    },
+    "bed_polyfon_64_a_2_0": {
+      "source": "bed_polyfon_64_a_0_0",
+      "x": 67,
+      "y": 43,
+      "flipH": true
+    },
+    "bed_polyfon_64_b_0_0": {
+      "x": 95,
+      "y": 24
+    },
+    "bed_polyfon_64_b_2_0": {
+      "source": "bed_polyfon_64_b_0_0",
+      "x": 95,
+      "y": 24,
+      "flipH": true
+    },
+    "bed_polyfon_64_c_0_0": {
+      "x": 61,
+      "y": 24
+    },
+    "bed_polyfon_64_c_2_0": {
+      "source": "bed_polyfon_64_c_0_0",
+      "x": 61,
+      "y": 24,
+      "flipH": true
+    },
+    "bed_polyfon_64_d_0_0": {
+      "x": 88,
+      "y": 21
+    },
+    "bed_polyfon_64_d_2_0": {
+      "source": "bed_polyfon_64_d_0_0",
+      "x": 88,
+      "y": 21,
+      "flipH": true
+    },
+    "bed_polyfon_64_sd_0_0": {
+      "x": 95,
+      "y": 17
+    },
+    "bed_polyfon_64_sd_2_0": {
+      "x": 47,
+      "y": 14
+    },
+    "bed_polyfon_icon_a": {
+      "x": 15,
+      "y": 10
+    },
+    "bed_polyfon_icon_b": {
+      "x": 12,
+      "y": 6
+    },
+    "bed_polyfon_32_a_0_0": {
+      "x": 34,
+      "y": 22
+    },
+    "bed_polyfon_32_a_2_0": {
+      "source": "bed_polyfon_32_a_0_0",
+      "x": 34,
+      "y": 22,
+      "flipH": true
+    },
+    "bed_polyfon_32_b_0_0": {
+      "x": 46,
+      "y": 5
+    },
+    "bed_polyfon_32_b_2_0": {
+      "source": "bed_polyfon_32_b_0_0",
+      "x": 46,
+      "y": 5,
+      "flipH": true
+    },
+    "bed_polyfon_32_c_0_0": {
+      "x": 28,
+      "y": 11
+    },
+    "bed_polyfon_32_c_2_0": {
+      "source": "bed_polyfon_32_c_0_0",
+      "x": 28,
+      "y": 11,
+      "flipH": true
+    },
+    "bed_polyfon_32_d_0_0": {
+      "x": 40,
+      "y": 2
+    },
+    "bed_polyfon_32_d_2_0": {
+      "source": "bed_polyfon_32_d_0_0",
+      "x": 40,
+      "y": 2,
+      "flipH": true
+    },
+    "bed_polyfon_32_sd_0_0": {
+      "source": "bed_polyfon_32_sd_2_0",
+      "x": 27,
+      "y": 9,
+      "flipH": true
+    },
+    "bed_polyfon_32_sd_2_0": {
+      "x": 27,
+      "y": 9
+    }
+  },
+  "logic": {
+    "model": {
+      "dimensions": {
+        "x": 2,
+        "y": 3,
+        "z": 1.73125
+      },
+      "directions": [
+        0,
+        90
+      ]
+    }
+  },
+  "visualizations": [
+    {
+      "angle": 45,
+      "layerCount": 5,
+      "size": 32,
+      "layers": {
+        "0": {
+          "z": 1030
+        }
+      },
+      "directions": {
+        "0": {
+          "layers": {
+            "1": {
+              "z": 1031
+            },
+            "3": {
+              "z": 1031
+            }
+          }
+        },
+        "2": {
+          "layers": {
+            "1": {
+              "z": 1031
+            },
+            "3": {
+              "z": 1031
+            }
+          }
+        }
+      },
+      "colors": {
+        "0": {
+          "layers": {
+            "2": {
+              "color": 11260114
+            },
+            "3": {
+              "color": 11260114
+            }
+          }
+        },
+        "2": {
+          "layers": {
+            "2": {
+              "color": 5395026
+            },
+            "3": {
+              "color": 5395026
+            }
+          }
+        },
+        "4": {
+          "layers": {
+            "2": {
+              "color": 16247740
+            },
+            "3": {
+              "color": 16247740
+            }
+          }
+        },
+        "6": {
+          "layers": {
+            "2": {
+              "color": 6204152
+            },
+            "3": {
+              "color": 6204152
+            }
+          }
+        },
+        "7": {
+          "layers": {
+            "2": {
+              "color": 8171829
+            },
+            "3": {
+              "color": 8171829
+            }
+          }
+        },
+        "8": {
+          "layers": {
+            "2": {
+              "color": 16767031
+            },
+            "3": {
+              "color": 16767031
+            }
+          }
+        },
+        "9": {
+          "layers": {
+            "2": {
+              "color": 14762520
+            },
+            "3": {
+              "color": 14762520
+            }
+          }
+        }
+      }
+    },
+    {
+      "angle": 45,
+      "layerCount": 4,
+      "size": 64,
+      "layers": {
+        "0": {
+          "z": 1030
+        }
+      },
+      "directions": {
+        "0": {
+          "layers": {
+            "1": {
+              "z": 1031
+            },
+            "3": {
+              "z": 1031
+            }
+          }
+        },
+        "2": {
+          "layers": {
+            "1": {
+              "z": 1031
+            },
+            "3": {
+              "z": 1031
+            }
+          }
+        }
+      },
+      "colors": {
+        "0": {
+          "layers": {
+            "2": {
+              "color": 11260114
+            },
+            "3": {
+              "color": 11260114
+            }
+          }
+        },
+        "2": {
+          "layers": {
+            "2": {
+              "color": 5395026
+            },
+            "3": {
+              "color": 5395026
+            }
+          }
+        },
+        "4": {
+          "layers": {
+            "2": {
+              "color": 16247740
+            },
+            "3": {
+              "color": 16247740
+            }
+          }
+        },
+        "6": {
+          "layers": {
+            "2": {
+              "color": 6204152
+            },
+            "3": {
+              "color": 6204152
+            }
+          }
+        },
+        "7": {
+          "layers": {
+            "2": {
+              "color": 8171829
+            },
+            "3": {
+              "color": 8171829
+            }
+          }
+        },
+        "8": {
+          "layers": {
+            "2": {
+              "color": 16767031
+            },
+            "3": {
+              "color": 16767031
+            }
+          }
+        },
+        "9": {
+          "layers": {
+            "2": {
+              "color": 14762520
+            },
+            "3": {
+              "color": 14762520
+            }
+          }
+        }
+      }
+    },
+    {
+      "angle": 360,
+      "layerCount": 2,
+      "size": 1,
+      "layers": {},
+      "directions": {
+        "0": {
+          "layers": {}
+        }
+      },
+      "colors": {
+        "0": {
+          "layers": {
+            "1": {
+              "color": 11260114
+            }
+          }
+        },
+        "2": {
+          "layers": {
+            "1": {
+              "color": 5395026
+            }
+          }
+        },
+        "4": {
+          "layers": {
+            "1": {
+              "color": 16247740
+            }
+          }
+        },
+        "6": {
+          "layers": {
+            "1": {
+              "color": 6204152
+            }
+          }
+        },
+        "7": {
+          "layers": {
+            "1": {
+              "color": 8171829
+            }
+          }
+        },
+        "8": {
+          "layers": {
+            "1": {
+              "color": 16767031
+            }
+          }
+        },
+        "9": {
+          "layers": {
+            "1": {
+              "color": 14762520
+            }
+          }
+        }
+      }
+    }
+  ],
+  "spritesheet": {
+    "frames": {
+      "bed_polyfon_bed_polyfon_32_a_0_0": {
+        "frame": {
+          "x": 2,
+          "y": 2,
+          "w": 67,
+          "h": 47
+        },
+        "rotated": false,
+        "trimmed": false,
+        "spriteSourceSize": {
+          "x": 0,
+          "y": 0,
+          "w": 67,
+          "h": 47
+        },
+        "sourceSize": {
+          "w": 67,
+          "h": 47
+        },
+        "pivot": {
+          "x": 0.5,
+          "y": 0.5
+        }
+      },
+      "bed_polyfon_bed_polyfon_32_b_0_0": {
+        "frame": {
+          "x": 71,
+          "y": 2,
+          "w": 48,
+          "h": 36
+        },
+        "rotated": false,
+        "trimmed": false,
+        "spriteSourceSize": {
+          "x": 0,
+          "y": 0,
+          "w": 48,
+          "h": 36
+        },
+        "sourceSize": {
+          "w": 48,
+          "h": 36
+        },
+        "pivot": {
+          "x": 0.5,
+          "y": 0.5
+        }
+      },
+      "bed_polyfon_bed_polyfon_32_c_0_0": {
+        "frame": {
+          "x": 2,
+          "y": 51,
+          "w": 48,
+          "h": 24
+        },
+        "rotated": false,
+        "trimmed": false,
+        "spriteSourceSize": {
+          "x": 0,
+          "y": 0,
+          "w": 48,
+          "h": 24
+        },
+        "sourceSize": {
+          "w": 48,
+          "h": 24
+        },
+        "pivot": {
+          "x": 0.5,
+          "y": 0.5
+        }
+      },
+      "bed_polyfon_bed_polyfon_32_d_0_0": {
+        "frame": {
+          "x": 52,
+          "y": 51,
+          "w": 39,
+          "h": 20
+        },
+        "rotated": false,
+        "trimmed": false,
+        "spriteSourceSize": {
+          "x": 0,
+          "y": 0,
+          "w": 39,
+          "h": 20
+        },
+        "sourceSize": {
+          "w": 39,
+          "h": 20
+        },
+        "pivot": {
+          "x": 0.5,
+          "y": 0.5
+        }
+      },
+      "bed_polyfon_bed_polyfon_32_sd_2_0": {
+        "frame": {
+          "x": 2,
+          "y": 77,
+          "w": 73,
+          "h": 41
+        },
+        "rotated": false,
+        "trimmed": false,
+        "spriteSourceSize": {
+          "x": 0,
+          "y": 0,
+          "w": 73,
+          "h": 41
+        },
+        "sourceSize": {
+          "w": 73,
+          "h": 41
+        },
+        "pivot": {
+          "x": 0.5,
+          "y": 0.5
+        }
+      },
+      "bed_polyfon_bed_polyfon_64_a_0_0": {
+        "frame": {
+          "x": 77,
+          "y": 77,
+          "w": 130,
+          "h": 91
+        },
+        "rotated": false,
+        "trimmed": false,
+        "spriteSourceSize": {
+          "x": 0,
+          "y": 0,
+          "w": 130,
+          "h": 91
+        },
+        "sourceSize": {
+          "w": 130,
+          "h": 91
+        },
+        "pivot": {
+          "x": 0.5,
+          "y": 0.5
+        }
+      },
+      "bed_polyfon_bed_polyfon_64_b_0_0": {
+        "frame": {
+          "x": 2,
+          "y": 170,
+          "w": 126,
+          "h": 86
+        },
+        "rotated": false,
+        "trimmed": false,
+        "spriteSourceSize": {
+          "x": 0,
+          "y": 0,
+          "w": 126,
+          "h": 86
+        },
+        "sourceSize": {
+          "w": 126,
+          "h": 86
+        },
+        "pivot": {
+          "x": 0.5,
+          "y": 0.5
+        }
+      },
+      "bed_polyfon_bed_polyfon_64_c_0_0": {
+        "frame": {
+          "x": 130,
+          "y": 170,
+          "w": 102,
+          "h": 49
+        },
+        "rotated": false,
+        "trimmed": false,
+        "spriteSourceSize": {
+          "x": 0,
+          "y": 0,
+          "w": 102,
+          "h": 49
+        },
+        "sourceSize": {
+          "w": 102,
+          "h": 49
+        },
+        "pivot": {
+          "x": 0.5,
+          "y": 0.5
+        }
+      },
+      "bed_polyfon_bed_polyfon_64_d_0_0": {
+        "frame": {
+          "x": 2,
+          "y": 258,
+          "w": 117,
+          "h": 58
+        },
+        "rotated": false,
+        "trimmed": false,
+        "spriteSourceSize": {
+          "x": 0,
+          "y": 0,
+          "w": 117,
+          "h": 58
+        },
+        "sourceSize": {
+          "w": 117,
+          "h": 58
+        },
+        "pivot": {
+          "x": 0.5,
+          "y": 0.5
+        }
+      },
+      "bed_polyfon_bed_polyfon_64_sd_0_0": {
+        "frame": {
+          "x": 121,
+          "y": 258,
+          "w": 147,
+          "h": 83
+        },
+        "rotated": false,
+        "trimmed": false,
+        "spriteSourceSize": {
+          "x": 0,
+          "y": 0,
+          "w": 147,
+          "h": 83
+        },
+        "sourceSize": {
+          "w": 147,
+          "h": 83
+        },
+        "pivot": {
+          "x": 0.5,
+          "y": 0.5
+        }
+      },
+      "bed_polyfon_bed_polyfon_64_sd_2_0": {
+        "frame": {
+          "x": 2,
+          "y": 343,
+          "w": 147,
+          "h": 83
+        },
+        "rotated": false,
+        "trimmed": false,
+        "spriteSourceSize": {
+          "x": 0,
+          "y": 0,
+          "w": 147,
+          "h": 83
+        },
+        "sourceSize": {
+          "w": 147,
+          "h": 83
+        },
+        "pivot": {
+          "x": 0.5,
+          "y": 0.5
+        }
+      },
+      "bed_polyfon_bed_polyfon_icon_a": {
+        "frame": {
+          "x": 151,
+          "y": 343,
+          "w": 30,
+          "h": 21
+        },
+        "rotated": false,
+        "trimmed": false,
+        "spriteSourceSize": {
+          "x": 0,
+          "y": 0,
+          "w": 30,
+          "h": 21
+        },
+        "sourceSize": {
+          "w": 30,
+          "h": 21
+        },
+        "pivot": {
+          "x": 0.5,
+          "y": 0.5
+        }
+      },
+      "bed_polyfon_bed_polyfon_icon_b": {
+        "frame": {
+          "x": 2,
+          "y": 428,
+          "w": 23,
+          "h": 12
+        },
+        "rotated": false,
+        "trimmed": false,
+        "spriteSourceSize": {
+          "x": 0,
+          "y": 0,
+          "w": 23,
+          "h": 12
+        },
+        "sourceSize": {
+          "w": 23,
+          "h": 12
+        },
+        "pivot": {
+          "x": 0.5,
+          "y": 0.5
+        }
+      }
+    },
+    "meta": {
+      "image": "bed_polyfon.webp",
+      "format": "RGBA8888",
+      "size": {
+        "w": 270,
+        "h": 442
+      },
+      "scale": 1,
+      "converter": "All-in-1-download-tool"
+    }
+  }
+}

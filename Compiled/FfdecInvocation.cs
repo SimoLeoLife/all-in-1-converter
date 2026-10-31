@@ -11,14 +11,43 @@ namespace Habbo_Downloader.Tools
     /// </summary>
     internal static class FfdecInvocation
     {
+        // FFDec is a short-lived JVM launched once per furni, so its cold start
+        // (JIT tiering + parallel-GC thread startup) dominates - not steady-state
+        // throughput. C1-only JIT and the single-threaded serial GC cut both the
+        // per-furni CPU cost and the startup latency a lot across thousands of
+        // runs. Passed via JAVA_TOOL_OPTIONS so it reaches both the Windows
+        // bundled-JVM exe and the `java -jar` fallback. If the bundled JVM ever
+        // rejects a flag (conversions start failing immediately), drop this line.
+        private const string JvmFastStartOptions = "-XX:TieredStopAtLevel=1 -XX:+UseSerialGC";
+
+        /// <summary>
+        /// Waits for FFDEC without holding a thread-pool thread (many conversions run in parallel).
+        /// False when it did not exit within the timeout.
+        /// </summary>
+        public static async Task<bool> WaitForExitAsync(Process process, int timeoutMs)
+        {
+            using var timeout = new System.Threading.CancellationTokenSource(timeoutMs);
+            try
+            {
+                await process.WaitForExitAsync(timeout.Token);
+                return true;
+            }
+            catch (OperationCanceledException)
+            {
+                return false;
+            }
+        }
+
         public static ProcessStartInfo BuildStartInfo(string ffdecArguments)
         {
             var toolsDir = Path.Combine("Tools", "ffdec");
 
+            ProcessStartInfo startInfo;
+
             if (OperatingSystem.IsWindows())
             {
                 var exe = Path.Combine(toolsDir, "ffdec-cli.exe");
-                return new ProcessStartInfo
+                startInfo = new ProcessStartInfo
                 {
                     FileName = exe,
                     Arguments = ffdecArguments,
@@ -28,18 +57,24 @@ namespace Habbo_Downloader.Tools
                     CreateNoWindow = true
                 };
             }
-
-            // Linux / macOS: there is no native binary, fall back to the jar.
-            var jar = Path.Combine(toolsDir, "ffdec-cli.jar");
-            return new ProcessStartInfo
+            else
             {
-                FileName = "java",
-                Arguments = $"-jar \"{jar}\" {ffdecArguments}",
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                UseShellExecute = false,
-                CreateNoWindow = true
-            };
+                // Linux / macOS: there is no native binary, fall back to the jar.
+                var jar = Path.Combine(toolsDir, "ffdec-cli.jar");
+                startInfo = new ProcessStartInfo
+                {
+                    FileName = "java",
+                    Arguments = $"-jar \"{jar}\" {ffdecArguments}",
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    UseShellExecute = false,
+                    CreateNoWindow = true
+                };
+            }
+
+            startInfo.Environment["JAVA_TOOL_OPTIONS"] = JvmFastStartOptions;
+
+            return startInfo;
         }
     }
 }

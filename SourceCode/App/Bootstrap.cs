@@ -15,7 +15,7 @@ namespace Habbo_Downloader.App
         {
             try
             {
-                var process = new Process
+                using var process = new Process
                 {
                     StartInfo = new ProcessStartInfo
                     {
@@ -48,10 +48,18 @@ namespace Habbo_Downloader.App
                 { "Habbo_Default", new[]
                 {
                     "badges", "clothes",
+                    Path.Combine("clothes", "swf"),
+                    Path.Combine("clothes", "hab"),
+                    Path.Combine("effects", "swf"),
+                    Path.Combine("effects", "hab"),
+                    Path.Combine("pets", "swf"),
+                    Path.Combine("pets", "hab"),
                     Path.Combine("files", "txt"),
                     Path.Combine("files", "xml"),
                     Path.Combine("files", "json"),
                     "hof_furni",
+                    Path.Combine("hof_furni", "swf"),
+                    Path.Combine("hof_furni", "hab"),
                     Path.Combine("hof_furni", "icons"),
                     "icons", "mp3", "quests",
                     "reception",
@@ -63,7 +71,7 @@ namespace Habbo_Downloader.App
                     "Original_ClothesData", "Import_ClothesData", "Merged_ClothesData",
                     "Original_Productdata", "Import_Productdata", "Merged_Productdata"
                 } },
-                { "Generate", new[] { "Furnidata", "Furniture", "Output_SQL" } },
+                { "Generate", new[] { "Furnidata", "default_furniture", "bc_furniture", "Output_SQL" } },
                 { "SWFCompiler", new[]
                 {
                     "clothes", "furniture", "import",
@@ -76,6 +84,9 @@ namespace Habbo_Downloader.App
                 { "Database", new[] { "Variables" } },
                 { "custom_downloads", new[] { "clothes", "nitro_furniture", Path.Combine("nitro_furniture", "icons") } }
             };
+
+            // Generate/Furniture became Generate/default_furniture: move an existing folder first.
+            if (Directory.Exists("Generate")) ConsoleApplication.SQLGenerator.MoveLegacyFurnitureFolder("Generate");
 
             foreach (var (baseDir, subDirs) in structure)
             {

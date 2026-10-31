@@ -14,7 +14,7 @@ namespace ConsoleApplication
 
             string externalTextUrl = config["AppSettings:externaltexturl"];
 
-            httpClient.DefaultRequestHeaders.UserAgent.ParseAdd(UserAgentClass.UserAgent);
+            httpClient.EnsureUserAgent();
 
             try
             {
@@ -57,6 +57,7 @@ namespace ConsoleApplication
                 }
 
                 string jsonPath = "./Habbo_Default/files/json/ExternalTexts.json";
+                Directory.CreateDirectory(Path.GetDirectoryName(jsonPath)!);
                 var jsonOptions = new JsonSerializerOptions { WriteIndented = true, Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping };
                 string jsonContent = JsonSerializer.Serialize(texts, jsonOptions);
                 await File.WriteAllTextAsync(jsonPath, jsonContent);
@@ -77,9 +78,10 @@ namespace ConsoleApplication
         {
             try
             {
-                var response = await httpClient.GetAsync(url);
+                using var response = await httpClient.GetAsync(url);
                 response.EnsureSuccessStatusCode();
 
+                Directory.CreateDirectory(Path.GetDirectoryName(filePath)!);
                 using (var fileStream = new FileStream(filePath, FileMode.Create, FileAccess.Write, FileShare.None))
                 {
                     await response.Content.CopyToAsync(fileStream);

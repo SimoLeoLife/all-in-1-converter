@@ -1,0 +1,428 @@
+{
+  "aliases": {},
+  "animations": {
+    "Dance 1": {
+      "name": "dance.1",
+      "desc": "Dance 1",
+      "frames": [
+        {
+          "bodyparts": [
+            {
+              "id": "leftarm",
+              "frame": 0,
+              "dx": 0,
+              "dy": 0,
+              "dd": 0,
+              "action": "Move"
+            },
+            {
+              "id": "petl",
+              "frame": 0,
+              "dx": 0,
+              "dy": 0,
+              "dd": 0,
+              "action": "Move"
+            },
+            {
+              "id": "torso",
+              "frame": 0,
+              "dx": 0,
+              "dy": 0,
+              "dd": 0,
+              "action": "Move"
+            },
+            {
+              "id": "head",
+              "frame": 0,
+              "dx": 0,
+              "dy": 0,
+              "dd": 0,
+              "action": "Default"
+            },
+            {
+              "id": "rightarm",
+              "frame": 0,
+              "dx": 0,
+              "dy": 0,
+              "dd": 0,
+              "action": "CarryItem"
+            },
+            {
+              "id": "petr",
+              "frame": 0,
+              "dx": 0,
+              "dy": 0,
+              "dd": 0,
+              "action": "Move"
+            }
+          ]
+        },
+        {
+          "bodyparts": [
+            {
+              "id": "leftarm",
+              "frame": 0,
+              "dx": 0,
+              "dy": 0,
+              "dd": 0,
+              "action": "Move"
+            },
+            {
+              "id": "petl",
+              "frame": 0,
+              "dx": 0,
+              "dy": 0,
+              "dd": 0,
+              "action": "Move"
+            },
+            {
+              "id": "torso",
+              "frame": 0,
+              "dx": 0,
+              "dy": 0,
+              "dd": 0,
+              "action": "Move"
+            },
+            {
+              "id": "head",
+              "frame": 0,
+              "dx": 0,
+              "dy": 0,
+              "dd": 0,
+              "action": "Default"
+            },
+            {
+              "id": "rightarm",
+              "frame": 0,
+              "dx": 0,
+              "dy": 0,
+              "dd": 0,
+              "action": "CarryItem"
+            },
+            {
+              "id": "petr",
+              "frame": 0,
+              "dx": 0,
+              "dy": 0,
+              "dd": 0,
+              "action": "Move"
+            }
+          ]
+        },
+        {
+          "bodyparts": [
+            {
+              "id": "leftarm",
+              "frame": 0,
+              "dx": 0,
+              "dy": -1,
+              "dd": 0,
+              "action": "Move"
+            },
+            {
+              "id": "petl",
+              "frame": 0,
+              "dx": 0,
+              "dy": -1,
+              "dd": 0,
+              "action": "Move"
+            },
+            {
+              "id": "torso",
+              "frame": 0,
+              "dx": 0,
+              "dy": 0,
+              "dd": 0,
+              "action": "Default"
+            },
+            {
+              "id": "head",
+              "frame": 0,
+              "dx": 0,
+              "dy": -1,
+              "dd": 1,
+              "action": "Default"
+            },
+            {
+              "id": "rightarm",
+              "frame": 0,
+              "dx": 0,
+              "dy": -1,
+              "dd": 0,
+              "action": "CarryItem"
+            },
+            {
+              "id": "petr",
+              "frame": 0,
+              "dx": 0,
+              "dy": -1,
+              "dd": 0,
+              "action": "Move"
+            }
+          ]
+        },
+        {
+          "bodyparts": [
+            {
+              "id": "leftarm",
+              "frame": 1,
+              "dx": 0,
+              "dy": -1,
+              "dd": 0,
+              "action": "Move"
+            },
+            {
+              "id": "petl",
+              "frame": 1,
+              "dx": 0,
+              "dy": -1,
+              "dd": 0,
+              "action": "Move"
+            },
+            {
+              "id": "torso",
+              "frame": 0,
+              "dx": 0,
+              "dy": 0,
+              "dd": 0,
+              "action": "Default"
+            },
+            {
+              "id": "head",
+              "frame": 0,
+              "dx": 0,
+              "dy": -1,
+              "dd": 1,
+              "action": "Default"
+            },
+            {
+              "id": "rightarm",
+              "frame": 3,
+              "dx": 0,
+              "dy": -1,
+              "dd": 0,
+              "action": "Move"
+            },
+            {
+              "id": "petr",
+              "frame": 3,
+              "dx": 0,
+              "dy": -1,
+              "dd": 0,
+              "action": "Move"
+            }
+          ]
+        },
+        {
+          "bodyparts": [
+            {
+              "id": "leftarm",
+              "frame": 0,
+              "dx": 0,
+              "dy": 0,
+              "dd": 0,
+              "action": "CarryItem"
+            },
+            {
+              "id": "petl",
+              "frame": 0,
+              "dx": 0,
+              "dy": 0,
+              "dd": 0,
+              "action": "Move"
+            },
+            {
+              "id": "torso",
+              "frame": 2,
+              "dx": 0,
+              "dy": 0,
+              "dd": 0,
+              "action": "Move"
+            },
+            {
+              "id": "head",
+              "frame": 0,
+              "dx": 0,
+              "dy": 0,
+              "dd": 0,
+              "action": "Default"
+            },
+            {
+              "id": "rightarm",
+              "frame": 2,
+              "dx": 0,
+              "dy": 0,
+              "dd": 0,
+              "action": "Move"
+            },
+            {
+              "id": "petr",
+              "frame": 2,
+              "dx": 0,
+              "dy": 0,
+              "dd": 0,
+              "action": "Move"
+            }
+          ]
+        },
+        {
+          "bodyparts": [
+            {
+              "id": "leftarm",
+              "frame": 0,
+              "dx": 0,
+              "dy": 0,
+              "dd": 0,
+              "action": "CarryItem"
+            },
+            {
+              "id": "petl",
+              "frame": 0,
+              "dx": 0,
+              "dy": 0,
+              "dd": 0,
+              "action": "Move"
+            },
+            {
+              "id": "torso",
+              "frame": 2,
+              "dx": 0,
+              "dy": 0,
+              "dd": 0,
+              "action": "Move"
+            },
+            {
+              "id": "head",
+              "frame": 0,
+              "dx": 0,
+              "dy": 0,
+              "dd": 0,
+              "action": "Default"
+            },
+            {
+              "id": "rightarm",
+              "frame": 2,
+              "dx": 0,
+              "dy": 0,
+              "dd": 0,
+              "action": "Move"
+            },
+            {
+              "id": "petr",
+              "frame": 2,
+              "dx": 0,
+              "dy": 0,
+              "dd": 0,
+              "action": "Move"
+            }
+          ]
+        },
+        {
+          "bodyparts": [
+            {
+              "id": "leftarm",
+              "frame": 0,
+              "dx": 0,
+              "dy": -1,
+              "dd": 0,
+              "action": "CarryItem"
+            },
+            {
+              "id": "petl",
+              "frame": 0,
+              "dx": 0,
+              "dy": -1,
+              "dd": 0,
+              "action": "Move"
+            },
+            {
+              "id": "torso",
+              "frame": 0,
+              "dx": 0,
+              "dy": 0,
+              "dd": 0,
+              "action": "Default"
+            },
+            {
+              "id": "head",
+              "frame": 0,
+              "dx": 0,
+              "dy": -1,
+              "dd": -1,
+              "action": "Default"
+            },
+            {
+              "id": "rightarm",
+              "frame": 2,
+              "dx": 0,
+              "dy": -1,
+              "dd": 0,
+              "action": "Move"
+            },
+            {
+              "id": "petr",
+              "frame": 2,
+              "dx": 0,
+              "dy": -1,
+              "dd": 0,
+              "action": "Move"
+            }
+          ]
+        },
+        {
+          "bodyparts": [
+            {
+              "id": "leftarm",
+              "frame": 1,
+              "dx": 0,
+              "dy": -1,
+              "dd": 0,
+              "action": "Move"
+            },
+            {
+              "id": "petl",
+              "frame": 1,
+              "dx": 0,
+              "dy": -1,
+              "dd": 0,
+              "action": "Move"
+            },
+            {
+              "id": "torso",
+              "frame": 0,
+              "dx": 0,
+              "dy": 0,
+              "dd": 0,
+              "action": "Default"
+            },
+            {
+              "id": "head",
+              "frame": 0,
+              "dx": 0,
+              "dy": -1,
+              "dd": -1,
+              "action": "Default"
+            },
+            {
+              "id": "rightarm",
+              "frame": 3,
+              "dx": 0,
+              "dy": -1,
+              "dd": 0,
+              "action": "Move"
+            },
+            {
+              "id": "petr",
+              "frame": 3,
+              "dx": 0,
+              "dy": -1,
+              "dd": 0,
+              "action": "Move"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "name": "Dance1"
+}

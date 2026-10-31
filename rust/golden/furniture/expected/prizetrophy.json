@@ -1,0 +1,371 @@
+{
+  "name": "prizetrophy",
+  "logicType": "furniture_trophy",
+  "visualizationType": "furniture_static",
+  "assets": {
+    "prizetrophy_64_a_0_0": {
+      "x": 22,
+      "y": 46
+    },
+    "prizetrophy_64_a_6_0": {
+      "source": "prizetrophy_64_a_0_0",
+      "x": 22,
+      "y": 46,
+      "flipH": true
+    },
+    "prizetrophy_64_b_0_0": {
+      "x": 15,
+      "y": 89
+    },
+    "prizetrophy_64_b_6_0": {
+      "source": "prizetrophy_64_b_0_0",
+      "x": 15,
+      "y": 89,
+      "flipH": true
+    },
+    "prizetrophy_64_c_0_0": {
+      "x": 15,
+      "y": 88
+    },
+    "prizetrophy_64_c_6_0": {
+      "source": "prizetrophy_64_c_0_0",
+      "x": 15,
+      "y": 88,
+      "flipH": true
+    },
+    "prizetrophy_icon_a": {
+      "x": 15,
+      "y": 15
+    },
+    "prizetrophy_32_a_0_0": {
+      "x": 11,
+      "y": 23
+    },
+    "prizetrophy_32_a_6_0": {
+      "source": "prizetrophy_32_a_0_0",
+      "x": 11,
+      "y": 23,
+      "flipH": true
+    },
+    "prizetrophy_32_b_0_0": {
+      "x": 8,
+      "y": 44
+    },
+    "prizetrophy_32_b_6_0": {
+      "source": "prizetrophy_32_b_0_0",
+      "x": 8,
+      "y": 44,
+      "flipH": true
+    },
+    "prizetrophy_32_c_0_0": {
+      "x": 8,
+      "y": 43
+    },
+    "prizetrophy_32_c_6_0": {
+      "source": "prizetrophy_32_c_0_0",
+      "x": 8,
+      "y": 43,
+      "flipH": true
+    }
+  },
+  "logic": {
+    "model": {
+      "dimensions": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "directions": [
+        0,
+        270
+      ]
+    }
+  },
+  "visualizations": [
+    {
+      "angle": 45,
+      "layerCount": 3,
+      "size": 32,
+      "layers": {
+        "1": {
+          "ink": "ADD",
+          "z": 5
+        },
+        "2": {
+          "z": 3
+        }
+      },
+      "directions": {
+        "0": {
+          "layers": {}
+        },
+        "6": {
+          "layers": {}
+        }
+      },
+      "colors": {
+        "1": {
+          "layers": {
+            "2": {
+              "color": 16768319
+            }
+          }
+        },
+        "3": {
+          "layers": {
+            "2": {
+              "color": 10053120
+            }
+          }
+        }
+      }
+    },
+    {
+      "angle": 45,
+      "layerCount": 3,
+      "size": 64,
+      "layers": {
+        "1": {
+          "ink": "ADD",
+          "z": 5
+        },
+        "2": {
+          "z": 3
+        }
+      },
+      "directions": {
+        "0": {
+          "layers": {}
+        },
+        "6": {
+          "layers": {}
+        }
+      },
+      "colors": {
+        "1": {
+          "layers": {
+            "2": {
+              "color": 16768319
+            }
+          }
+        },
+        "3": {
+          "layers": {
+            "2": {
+              "color": 10053120
+            }
+          }
+        }
+      }
+    },
+    {
+      "angle": 360,
+      "layerCount": 1,
+      "size": 1,
+      "layers": {},
+      "directions": {
+        "0": {
+          "layers": {}
+        }
+      },
+      "colors": {
+        "1": {
+          "layers": {
+            "0": {
+              "color": 16768319
+            }
+          }
+        },
+        "3": {
+          "layers": {
+            "0": {
+              "color": 10053120
+            }
+          }
+        }
+      }
+    }
+  ],
+  "spritesheet": {
+    "frames": {
+      "prizetrophy_prizetrophy_32_a_0_0": {
+        "frame": {
+          "x": 2,
+          "y": 2,
+          "w": 22,
+          "h": 30
+        },
+        "rotated": false,
+        "trimmed": false,
+        "spriteSourceSize": {
+          "x": 0,
+          "y": 0,
+          "w": 22,
+          "h": 30
+        },
+        "sourceSize": {
+          "w": 22,
+          "h": 30
+        },
+        "pivot": {
+          "x": 0.5,
+          "y": 0.5
+        }
+      },
+      "prizetrophy_prizetrophy_32_b_0_0": {
+        "frame": {
+          "x": 2,
+          "y": 34,
+          "w": 15,
+          "h": 27
+        },
+        "rotated": false,
+        "trimmed": false,
+        "spriteSourceSize": {
+          "x": 0,
+          "y": 0,
+          "w": 15,
+          "h": 27
+        },
+        "sourceSize": {
+          "w": 15,
+          "h": 27
+        },
+        "pivot": {
+          "x": 0.5,
+          "y": 0.5
+        }
+      },
+      "prizetrophy_prizetrophy_32_c_0_0": {
+        "frame": {
+          "x": 2,
+          "y": 63,
+          "w": 16,
+          "h": 46
+        },
+        "rotated": false,
+        "trimmed": false,
+        "spriteSourceSize": {
+          "x": 0,
+          "y": 0,
+          "w": 16,
+          "h": 46
+        },
+        "sourceSize": {
+          "w": 16,
+          "h": 46
+        },
+        "pivot": {
+          "x": 0.5,
+          "y": 0.5
+        }
+      },
+      "prizetrophy_prizetrophy_64_a_0_0": {
+        "frame": {
+          "x": 2,
+          "y": 111,
+          "w": 44,
+          "h": 59
+        },
+        "rotated": false,
+        "trimmed": false,
+        "spriteSourceSize": {
+          "x": 0,
+          "y": 0,
+          "w": 44,
+          "h": 59
+        },
+        "sourceSize": {
+          "w": 44,
+          "h": 59
+        },
+        "pivot": {
+          "x": 0.5,
+          "y": 0.5
+        }
+      },
+      "prizetrophy_prizetrophy_64_b_0_0": {
+        "frame": {
+          "x": 2,
+          "y": 172,
+          "w": 30,
+          "h": 52
+        },
+        "rotated": false,
+        "trimmed": false,
+        "spriteSourceSize": {
+          "x": 0,
+          "y": 0,
+          "w": 30,
+          "h": 52
+        },
+        "sourceSize": {
+          "w": 30,
+          "h": 52
+        },
+        "pivot": {
+          "x": 0.5,
+          "y": 0.5
+        }
+      },
+      "prizetrophy_prizetrophy_64_c_0_0": {
+        "frame": {
+          "x": 2,
+          "y": 226,
+          "w": 32,
+          "h": 91
+        },
+        "rotated": false,
+        "trimmed": false,
+        "spriteSourceSize": {
+          "x": 0,
+          "y": 0,
+          "w": 32,
+          "h": 91
+        },
+        "sourceSize": {
+          "w": 32,
+          "h": 91
+        },
+        "pivot": {
+          "x": 0.5,
+          "y": 0.5
+        }
+      },
+      "prizetrophy_prizetrophy_icon_a": {
+        "frame": {
+          "x": 2,
+          "y": 319,
+          "w": 30,
+          "h": 30
+        },
+        "rotated": false,
+        "trimmed": false,
+        "spriteSourceSize": {
+          "x": 0,
+          "y": 0,
+          "w": 30,
+          "h": 30
+        },
+        "sourceSize": {
+          "w": 30,
+          "h": 30
+        },
+        "pivot": {
+          "x": 0.5,
+          "y": 0.5
+        }
+      }
+    },
+    "meta": {
+      "image": "prizetrophy.webp",
+      "format": "RGBA8888",
+      "size": {
+        "w": 48,
+        "h": 351
+      },
+      "scale": 1,
+      "converter": "All-in-1-download-tool"
+    }
+  }
+}

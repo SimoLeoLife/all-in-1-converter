@@ -28,7 +28,7 @@ namespace ConsoleApplication
                     return;
                 }
 
-                httpClient.DefaultRequestHeaders.UserAgent.ParseAdd(UserAgentClass.UserAgent);
+                httpClient.EnsureUserAgent();
 
                 for (int retryCount = 3; retryCount > 0; retryCount--)
                 {
@@ -80,6 +80,7 @@ namespace ConsoleApplication
                 }
 
                 string jsonPath = "./Habbo_Default/files/json/external_variables.json";
+                Directory.CreateDirectory(Path.GetDirectoryName(jsonPath)!);
                 var jsonOptions = new JsonSerializerOptions { WriteIndented = true, Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping };
                 string jsonContent = JsonSerializer.Serialize(variables, jsonOptions);
                 await File.WriteAllTextAsync(jsonPath, jsonContent);
@@ -94,12 +95,13 @@ namespace ConsoleApplication
 
         private static async Task DownloadFileAsync(string url, string filePath, string fileName)
         {
-            var response = await httpClient.GetAsync(url).ConfigureAwait(false);
+            using var response = await httpClient.GetAsync(url);
             response.EnsureSuccessStatusCode();
 
+            Directory.CreateDirectory(Path.GetDirectoryName(filePath)!);
             using (var fileStream = new FileStream(filePath, FileMode.Create, FileAccess.Write, FileShare.None))
             {
-                await response.Content.CopyToAsync(fileStream).ConfigureAwait(false);
+                await response.Content.CopyToAsync(fileStream);
             }
 
             WriteColoredMessage($"Downloaded: {fileName}", ConsoleColor.Green);
