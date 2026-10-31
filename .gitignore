@@ -28,6 +28,7 @@ Thumbs.db
 /Merge/
 /Database/
 /custom_downloads/
+/Catalog/
 
 # Asset files are never committed, except the golden test inputs (tests/golden/.gitignore)
 *.swf

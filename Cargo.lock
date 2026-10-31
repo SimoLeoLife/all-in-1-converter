@@ -1604,6 +1604,7 @@ dependencies = [
  "eframe",
  "embed-resource",
  "futures",
+ "habbo-catalog",
  "habbo-core",
  "habbo-db",
  "habbo-downloads",
@@ -1625,6 +1626,22 @@ dependencies = [
  "tokio",
  "windows-sys 0.59.0",
  "zip",
+]
+
+[[package]]
+name = "habbo-catalog"
+version = "1.0.0"
+dependencies = [
+ "anyhow",
+ "chrono",
+ "futures",
+ "habbo-core",
+ "habbo-db",
+ "mysql_async",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "tokio",
 ]
 
 [[package]]

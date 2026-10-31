@@ -153,6 +153,13 @@ for the client's avatareditor.effects.icon.url (${image.library.url}fx_icons/fx_
 furni into Generate/default_furniture, then writes their SQL to Generate/Output_SQL.
 The database itself is not changed: check the SQL and import it yourself.",
             ),
+            MenuItem::op("catalog", "Rip Habbo catalogue (G-Earth)", "habbo.catalog-rip").help(
+                "Start G-Earth, connect it and log into Habbo with your own client, then run this.
+The converter joins G-Earth as an extension (allow it when G-Earth asks), reads the
+catalogue index and every page, gently paced, and writes Catalog/<hotel>_<date>/:
+catalog.json, catalog_pages.sql + catalog_items.sql (Arcturus) and the page images.
+Keep the catalogue window closed while it runs. Only catalogue requests are sent.",
+            ),
             MenuItem::op("all", "Download All (clothes + furni + product + ...)", "habbo.all").help(
                 "Runs the full bootstrap sequence in order: clothes, furnidata, productdata,\n\
 furniture SWF, variables, texts, icons. Useful when initializing a fresh\n\
