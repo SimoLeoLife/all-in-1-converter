@@ -103,8 +103,14 @@ pub fn write_string(out: &mut String, text: &str, escaping: Escaping) {
                         !(' '..='~').contains(&ch) || matches!(ch, '"' | '&' | '\'' | '+' | '<' | '>' | '`')
                     }
                     Escaping::Relaxed => {
-                        // NOTE(port): .NET also escapes unassigned code points; not tracked here.
-                        (ch as u32) < 0x20 || (0x7F..=0x9F).contains(&(ch as u32)) || matches!(ch, '\u{2028}' | '\u{2029}')
+                        // .NET never lets through Cc, Zs (except U+0020), Zl, Zp or private use.
+                        // NOTE(port): it also escapes unassigned code points; not tracked here.
+                        let c = ch as u32;
+                        c < 0x20
+                            || (0x7F..=0x9F).contains(&c)
+                            || matches!(c, 0xA0 | 0x1680 | 0x2000..=0x200A | 0x2028 | 0x2029 | 0x202F | 0x205F | 0x3000)
+                            || (0xE000..=0xF8FF).contains(&c)
+                            || c >= 0xF0000
                     }
                 };
                 if escape {

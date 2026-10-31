@@ -37,6 +37,7 @@ rfd = "0.15.4"
 enable-ansi-support = "0.2"
 crossterm = "0.28"
 tempfile = "3"
+webp = "0.3"
 
 [profile.release]
 opt-level = 3
