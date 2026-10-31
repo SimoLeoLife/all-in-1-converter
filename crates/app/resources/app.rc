@@ -2,8 +2,8 @@
 1 ICON "app.ico"
 
 1 VERSIONINFO
-FILEVERSION     1,1,0,0
-PRODUCTVERSION  1,1,0,0
+FILEVERSION     1,1,1,0
+PRODUCTVERSION  1,1,1,0
 FILEOS          0x40004
 FILETYPE        0x1
 BEGIN
@@ -13,11 +13,11 @@ BEGIN
     BEGIN
       VALUE "CompanyName",      "All-in-1 Converter"
       VALUE "FileDescription",  "All-in-1 Converter - Habbo asset workstation"
-      VALUE "FileVersion",      "1.1.0"
+      VALUE "FileVersion",      "1.1.1"
       VALUE "InternalName",     "habbo-downloader"
       VALUE "OriginalFilename", "habbo-downloader.exe"
       VALUE "ProductName",      "All-in-1 Converter"
-      VALUE "ProductVersion",   "1.1.0"
+      VALUE "ProductVersion",   "1.1.1"
     END
   END
   BLOCK "VarFileInfo"
