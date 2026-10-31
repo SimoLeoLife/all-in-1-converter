@@ -1,0 +1,71 @@
+name: Rust
+
+# Builds and tests the Rust port (rust/) on Windows and Linux, and keeps the
+# release binaries as workflow artifacts. The .NET workflows are unchanged.
+
+on:
+  pull_request:
+    paths: ["rust/**", ".github/workflows/rust.yml", "Compiled/Tools/**"]
+  push:
+    branches: [main, rust-port]
+    paths: ["rust/**", ".github/workflows/rust.yml", "Compiled/Tools/**"]
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  windows:
+    name: Windows x64
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: rust
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: rust
+      - name: Test
+        run: cargo test --workspace
+      - name: Build release
+        run: cargo build --release -p habbo-app
+      - name: Package
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force out | Out-Null
+          Copy-Item target/release/habbo-downloader.exe out/
+          Copy-Item crates/core/assets/default_config.ini out/config.ini
+      - uses: actions/upload-artifact@v4
+        with:
+          name: all-in-1-converter-rust-win-x64
+          path: rust/out/
+
+  linux:
+    name: Linux x64
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: rust
+    steps:
+      - uses: actions/checkout@v4
+      - name: System libraries
+        run: sudo apt-get update && sudo apt-get install -y pkg-config libssl-dev libxkbcommon-dev libgl1-mesa-dev
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: rust
+      - name: Test
+        run: cargo test --workspace
+      - name: Build release
+        run: cargo build --release -p habbo-app
+      - name: Package
+        run: |
+          mkdir -p out
+          cp target/release/habbo-downloader out/
+          cp crates/core/assets/default_config.ini out/config.ini
+      - uses: actions/upload-artifact@v4
+        with:
+          name: all-in-1-converter-rust-linux-x64
+          path: rust/out/

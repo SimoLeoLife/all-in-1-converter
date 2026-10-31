@@ -32,7 +32,7 @@ regex = "1"
 chrono = "0.4"
 uuid = { version = "1", features = ["v4"] }
 mysql_async = { version = "0.35.1", default-features = false, features = ["minimal", "native-tls-tls"] }
-eframe = { version = "0.31.1", default-features = false, features = ["glow", "default_fonts"] }
+eframe = { version = "0.31.1", default-features = false, features = ["glow", "default_fonts", "x11", "wayland"] }
 rfd = "0.15.4"
 enable-ansi-support = "0.2"
 crossterm = "0.28"
