@@ -40,6 +40,8 @@ pub struct RipOptions {
     /// Catalogue modes to rip; the first one is required.
     pub modes: Vec<String>,
     pub extension: ExtensionInfo,
+    /// When G-Earth is not running, offer to start it (downloading it into Tools/G-Earth first).
+    pub offer_gearth: bool,
 }
 
 impl Default for RipOptions {
@@ -59,6 +61,7 @@ impl Default for RipOptions {
             header_overrides: None,
             modes: vec!["NORMAL".into(), "BUILDERS_CLUB".into()],
             extension: ExtensionInfo::default(),
+            offer_gearth: false,
         }
     }
 }
@@ -107,6 +110,7 @@ impl RipOptions {
         options.header_overrides = get("catalog_rip_headers");
         options.download_images = !env_flag("HABBO_CATALOG_NO_IMAGES");
         options.use_database = !env_flag("HABBO_CATALOG_NO_DB");
+        options.offer_gearth = true;
         options
     }
 }
@@ -161,6 +165,9 @@ async fn connect_gearth(options: &RipOptions) -> Result<Session> {
     } else {
         options.ports.clone()
     };
+    if options.offer_gearth && !crate::gearth_install::is_running(&ports).await {
+        crate::gearth_install::offer_to_start().await?;
+    }
     let range = match (ports.first(), ports.last()) {
         (Some(a), Some(b)) if a != b => format!("{a}-{b}"),
         (Some(a), _) => a.to_string(),
@@ -518,7 +525,8 @@ fn print_instructions(options: &RipOptions) {
     outln!("This reads the catalogue the way your own client does: G-Earth relays the requests through your");
     outln!("logged-in session. Nothing is bought or changed; your game traffic passes through unchanged.");
     outln!();
-    outln!("  1. Start G-Earth and connect it to the hotel (Connection tab).");
+    outln!("  1. Start G-Earth and connect it to the hotel (Connection tab). Not running? This offers to");
+    outln!("     download the official G-Earth into Tools/G-Earth and start it.");
     outln!("  2. Start your Habbo client and log in as usual.");
     outln!(
         "  3. G-Earth may ask whether to allow the extension \"{}\": answer Yes.",

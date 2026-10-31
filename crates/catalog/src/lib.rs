@@ -7,6 +7,7 @@
 //! Arcturus, README.txt and the page images and icons. Every intercepted game packet is let
 //! through unchanged at once; the only packets sent are GetCatalogIndex and GetCatalogPage.
 
+pub mod gearth_install;
 pub mod export;
 pub mod gearth;
 pub mod images;
