@@ -1606,7 +1606,7 @@ dependencies = [
 
 [[package]]
 name = "habbo-app"
-version = "1.0.0"
+version = "1.1.0"
 dependencies = [
  "anyhow",
  "chrono",
@@ -1640,7 +1640,7 @@ dependencies = [
 
 [[package]]
 name = "habbo-catalog"
-version = "1.0.0"
+version = "1.1.0"
 dependencies = [
  "anyhow",
  "chrono",
@@ -1659,7 +1659,7 @@ dependencies = [
 
 [[package]]
 name = "habbo-core"
-version = "1.0.0"
+version = "1.1.0"
 dependencies = [
  "anyhow",
  "chrono",
@@ -1675,7 +1675,7 @@ dependencies = [
 
 [[package]]
 name = "habbo-db"
-version = "1.0.0"
+version = "1.1.0"
 dependencies = [
  "anyhow",
  "base64 0.22.1",
@@ -1696,7 +1696,7 @@ dependencies = [
 
 [[package]]
 name = "habbo-downloads"
-version = "1.0.0"
+version = "1.1.0"
 dependencies = [
  "anyhow",
  "futures",
@@ -1716,7 +1716,7 @@ dependencies = [
 
 [[package]]
 name = "habbo-figure"
-version = "1.0.0"
+version = "1.1.0"
 dependencies = [
  "anyhow",
  "futures",
@@ -1733,7 +1733,7 @@ dependencies = [
 
 [[package]]
 name = "habbo-furni"
-version = "1.0.0"
+version = "1.1.0"
 dependencies = [
  "anyhow",
  "futures",
@@ -1749,7 +1749,7 @@ dependencies = [
 
 [[package]]
 name = "habbo-golden"
-version = "1.0.0"
+version = "1.1.0"
 dependencies = [
  "anyhow",
  "habbo-core",
@@ -1765,7 +1765,7 @@ dependencies = [
 
 [[package]]
 name = "habbo-nitro"
-version = "1.0.0"
+version = "1.1.0"
 dependencies = [
  "anyhow",
  "base64 0.22.1",
@@ -1782,7 +1782,7 @@ dependencies = [
 
 [[package]]
 name = "habbo-pipeline"
-version = "1.0.0"
+version = "1.1.0"
 dependencies = [
  "anyhow",
  "habbo-core",
@@ -1795,7 +1795,7 @@ dependencies = [
 
 [[package]]
 name = "habbo-swf"
-version = "1.0.0"
+version = "1.1.0"
 dependencies = [
  "anyhow",
  "flate2",
@@ -1808,7 +1808,7 @@ dependencies = [
 
 [[package]]
 name = "habbo-tools"
-version = "1.0.0"
+version = "1.1.0"
 dependencies = [
  "anyhow",
  "habbo-core",
