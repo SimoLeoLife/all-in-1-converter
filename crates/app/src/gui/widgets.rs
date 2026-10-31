@@ -2,19 +2,32 @@
 
 use eframe::egui::{self, Color32, RichText};
 
-use super::theme::{Fixed, Palette};
+use super::theme::{self, Fixed, Palette};
 
 pub fn card<R>(ui: &mut egui::Ui, palette: &Palette, margin: egui::Margin, add: impl FnOnce(&mut egui::Ui) -> R) -> R {
-    egui::Frame::new()
-        .fill(palette.card)
-        .stroke(egui::Stroke::new(1.0_f32, palette.card_border))
-        .corner_radius(12)
+    card_frame(palette)
         .inner_margin(margin)
         .show(ui, |ui| {
             ui.set_width(ui.available_width());
             add(ui)
         })
         .inner
+}
+
+/// A card's frame: in the Hotel look a dark 2 px outline with a hard shadow under it.
+pub fn card_frame(palette: &Palette) -> egui::Frame {
+    let frame = egui::Frame::new().fill(palette.card).stroke(palette.card_stroke()).corner_radius(theme::card_corners());
+    if theme::hotel() {
+        frame.shadow(egui::Shadow { offset: [0, 3], blur: 0, spread: 0, color: theme::with_alpha(palette.outline, 0x40) })
+    } else {
+        frame
+    }
+}
+
+/// A page or card title: Pixelify Sans in the Hotel look.
+pub fn title_text(text: &str, size: f32) -> RichText {
+    let text = RichText::new(text).size(size).family(theme::title_family());
+    if theme::hotel() { text } else { text.strong() }
 }
 
 pub fn chip(ui: &mut egui::Ui, text: &str, back: Color32, fore: Color32) {
@@ -25,7 +38,7 @@ pub fn chip(ui: &mut egui::Ui, text: &str, back: Color32, fore: Color32) {
 
 pub fn heading(ui: &mut egui::Ui, palette: &Palette, title: &str, subtitle: &str) {
     ui.vertical(|ui| {
-        ui.label(RichText::new(title).size(15.0).strong());
+        ui.label(title_text(title, 15.0));
         ui.label(RichText::new(subtitle).size(12.5).color(palette.muted));
     });
 }
@@ -37,15 +50,18 @@ pub fn label_block(ui: &mut egui::Ui, palette: &Palette, label: &str, hint: &str
     });
 }
 
+/// The main action: the hotel's green "go" button with a darker edge, or the brand colour.
 pub fn primary_button(text: &str) -> egui::Button<'static> {
-    egui::Button::new(RichText::new(text.to_string()).strong().color(Color32::WHITE))
-        .fill(Fixed::brand())
-        .corner_radius(8)
-        .min_size(egui::vec2(0.0, 32.0))
+    let button = egui::Button::new(RichText::new(text.to_string()).strong().color(Color32::WHITE)).min_size(egui::vec2(0.0, 32.0));
+    if theme::hotel() {
+        button.fill(Fixed::go()).stroke(egui::Stroke::new(2.0_f32, Fixed::go_edge())).corner_radius(6)
+    } else {
+        button.fill(Fixed::brand()).corner_radius(8)
+    }
 }
 
 pub fn secondary_button(text: &str) -> egui::Button<'static> {
-    egui::Button::new(RichText::new(text.to_string())).corner_radius(8).min_size(egui::vec2(0.0, 32.0))
+    egui::Button::new(RichText::new(text.to_string())).corner_radius(if theme::hotel() { 6 } else { 8 }).min_size(egui::vec2(0.0, 32.0))
 }
 
 /// A status dot.

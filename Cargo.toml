@@ -5,7 +5,7 @@ members = ["crates/core", "crates/nitro", "crates/swf", "crates/tools", "crates/
 [workspace.package]
 version = "1.0.0"
 edition = "2021"
-license = "MIT"
+license = "GPL-3.0-only"
 
 [workspace.dependencies]
 habbo-core = { path = "crates/core" }
