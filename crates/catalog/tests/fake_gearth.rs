@@ -387,12 +387,9 @@ async fn rips_through_a_fake_gearth() {
     assert!(pages_sql.contains("(4, 2, 'rentables', 'Rentables', 'info_rentables', 1, 4, 1, 2, '1', '1', '0', 'BOTH', '0', 'catalog_rentables_header', '', '', 'Rent one||Rent two'"), "{pages_sql}");
     assert!(pages_sql.contains("(101, 2, 'hidden_cat', 'Hidden category', 'default_3x3', 1, 5, 1, 3, '0', '0', '0', 'NORMAL'"), "{pages_sql}");
     assert!(pages_sql.contains("(5, 101, 'hidden_child'"), "{pages_sql}"); // disabled page: new id above the highest
-    assert!(
-        pages_sql.contains(
-            "-- page 5: layout 'recolorable_furniture' is not in Arcturus' page_layout enum"
-        ),
-        "{pages_sql}"
-    );
+    // recolorable_furniture is in Polaris' enum (migration V20261014120000): kept as is.
+    assert!(pages_sql.contains("(5, 101, 'hidden_child', 'Hidden child', 'recolorable_furniture'"), "{pages_sql}");
+    assert!(!pages_sql.contains("layout 'recolorable_furniture' is not in"), "{pages_sql}");
     assert!(pages_sql.contains("(100, -1, 'bc_addons', 'BC Addons', 'builders_club_addons', 1, 9, 1, 1, '1', '1', '0', 'BUILDER'"), "{pages_sql}");
     assert!(pages_sql.contains("(6, -1, 'slow_page', 'Slow page', 'pets', 1, 7, 1, 3, '1', '1', '0', 'NORMAL', '0', 'pets_h', 'pets_t', '', 'p1', 'p2', 'pd', 'pt'"), "{pages_sql}");
     assert!(items_sql.contains("(300, CONCAT_WS(';', (SELECT `id` FROM `items_base` WHERE `type` = 's' AND `sprite_id` = 4001 ORDER BY `id` LIMIT 1)), 3, 'rare_dragon_ltd', 50, 0, 0, 1, 100, 37, 1, 300, 0, '', '1', '0')"), "{items_sql}");
@@ -418,7 +415,7 @@ async fn rips_through_a_fake_gearth() {
 
     let readme = std::fs::read_to_string(out.join("README.txt")).unwrap();
     assert!(readme.contains("Import catalog_pages.sql, then catalog_items.sql"));
-    assert!(readme.contains("recolorable_furniture (1)"));
+    assert!(!readme.contains("recolorable_furniture (1)"));
 
     // Keep the files for a manual import check (see tests/database.rs).
     if let Ok(keep) = std::env::var("HABBO_CATALOG_TEST_KEEP") {
