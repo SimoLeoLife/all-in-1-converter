@@ -13,7 +13,7 @@ desktop window and a keyboard-only console mode behind the same operations.
 | | |
 |---|---|
 | Language | Rust (stable), Windows x64 and Linux x64 |
-| Desktop window | egui, light/dark theme, 9 languages |
+| Desktop window | egui, Hotel and Professional looks, light/dark theme, 9 languages |
 | Sprite sheets | lossless WebP (libwebp) or PNG, pixel-checked |
 | Database | MariaDB / MySQL (mysql_async), automatic backups before changes |
 | SWF reader | built in; JPEXS FFDec (`assets/ffdec`, embedded) only as a fallback |
@@ -39,6 +39,11 @@ it in place.
 
 ## The window
 
+![Dashboard in the Hotel look](docs/screenshots/dashboard-hotel-light.png)
+
+- **Two looks** (Settings → *Look*, or `look=` in `config.ini`): **Hotel**, the default, with the
+  hotel's blues, outlined cards, green go buttons, pixel titles and a hotel view on the dashboard
+  (blue sky by day, stars by night); **Professional**, neutral and compact.
 - **Dashboard** with the modules, quick actions, recent runs (logs kept in `logs/`), your hotel and
   asset workspace.
 - **Operation pages** with live, coloured output, an answer box for the operation's questions, a
@@ -49,6 +54,14 @@ it in place.
   URLs, database (with *Test connection*).
 - **Languages**: English, Italiano, Français, Deutsch, Nederlands, Español, Português (Brasil),
   Türkçe, Suomi. Operation output and the console mode stay in English.
+
+| Hotel, dark | Operation page | Professional |
+|---|---|---|
+| ![](docs/screenshots/dashboard-hotel-dark.png) | ![](docs/screenshots/tools-hotel-light.png) | ![](docs/screenshots/dashboard-professional-light.png) |
+
+Screenshots are made by the app itself: `HABBO_SCREENSHOT=<file.png>` with
+`HABBO_SCREENSHOT_PAGE`, `HABBO_SCREENSHOT_THEME=light|dark`, `HABBO_SCREENSHOT_LOOK=hotel|professional`
+and `HABBO_SCREENSHOT_LANG`.
 
 ## Operations
 
@@ -162,7 +175,12 @@ fixed. See [docs/RUST_PORT.md](docs/RUST_PORT.md).
 - **Nitro Team** — pets converter base (`discord.gg/yCXcMqrT`).
 - **AtlasOmega** — "Among Us" effects (enable 880-903).
 - **Leet** — enables 500-688.
+- The Hotel look follows duckietm's [All-in-1 Installer](https://github.com/duckietm/All-in-1-installer).
+  Fonts: Ubuntu (Ubuntu Font Licence 1.0) and Pixelify Sans (SIL Open Font Licence 1.1), licences
+  in `crates/app/assets/fonts`.
 - The whole Habbo retro community.
+
+Licence: GPL-3.0 (see `LICENSE`).
 
 ## Want to help?
 

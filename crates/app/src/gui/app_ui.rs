@@ -225,10 +225,14 @@ impl ProApp {
                 ui.horizontal(|ui| {
                     ui.add_space(6.0);
                     let (rect, _) = ui.allocate_exact_size(vec2(36.0, 36.0), egui::Sense::hover());
-                    ui.painter().rect_filled(rect, 10.0, theme::hex("#5A68EE"));
-                    ui.painter().text(rect.center(), egui::Align2::CENTER_CENTER, "📦", egui::FontId::proportional(18.0), Color32::WHITE);
+                    logo_tile(ui, rect, 18.0);
                     ui.vertical(|ui| {
-                        ui.label(RichText::new(t("All-in-1 Converter")).size(15.0).strong().color(Color32::WHITE));
+                        let name = if theme::hotel() {
+                            title_text(t("All-in-1 Converter"), 15.0).color(Fixed::sidebar_accent())
+                        } else {
+                            RichText::new(t("All-in-1 Converter")).size(15.0).strong().color(Color32::WHITE)
+                        };
+                        ui.label(name);
                         ui.label(RichText::new(t("Habbo asset workstation")).size(11.5).color(Fixed::sidebar_muted()));
                     });
                 });
@@ -266,7 +270,7 @@ impl ProApp {
         egui::Frame::new().inner_margin(egui::Margin { left: 32, right: 32, top: 26, bottom: 20 }).show(ui, |ui| {
             ui.horizontal(|ui| {
                 ui.vertical(|ui| {
-                    ui.label(RichText::new(title).size(26.0).strong());
+                    ui.label(title_text(title, 26.0));
                     ui.label(RichText::new(subtitle).size(13.5).color(palette.muted));
                 });
                 ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
@@ -280,7 +284,9 @@ impl ProApp {
                     } else {
                         (t("Failed"), palette.error_back, palette.error_text)
                     };
-                    egui::Frame::new().fill(back).corner_radius(14).inner_margin(egui::Margin::symmetric(11, 5)).show(ui, |ui| {
+                    // The hotel's pale chips need an edge to stand out on its blue surface.
+                    let edge = if theme::hotel() { egui::Stroke::new(1.5_f32, theme::with_alpha(fore, 0x80)) } else { egui::Stroke::NONE };
+                    egui::Frame::new().fill(back).stroke(edge).corner_radius(14).inner_margin(egui::Margin::symmetric(11, 5)).show(ui, |ui| {
                         ui.horizontal(|ui| {
                             dot(ui, fore);
                             ui.label(RichText::new(text).size(12.0).strong().color(fore));
@@ -323,14 +329,20 @@ impl ProApp {
         let palette = Palette::current(ui.ctx());
         egui::ScrollArea::vertical().auto_shrink([false, false]).show(ui, |ui| {
             page_margin(ui, |ui| {
+                if theme::hotel() {
+                    super::banner::hotel_banner(
+                        ui,
+                        &palette,
+                        t("Welcome to your hotel!"),
+                        t("Download, convert and import Habbo assets for your retro: furniture, clothes, pets, effects, the catalogue and the database."),
+                    );
+                    ui.add_space(22.0);
+                }
                 // Module tiles
                 ui.columns(4, |columns| {
                     for (column, (category, label, caption, icon, color)) in columns.iter_mut().zip(MODULES) {
                         let color = theme::hex(color);
-                        let response = egui::Frame::new()
-                            .fill(palette.card)
-                            .stroke(egui::Stroke::new(1.0_f32, palette.card_border))
-                            .corner_radius(12)
+                        let response = card_frame(&palette)
                             .inner_margin(egui::Margin::symmetric(20, 18))
                             .show(column, |ui| {
                                 ui.set_width(ui.available_width());
@@ -339,7 +351,7 @@ impl ProApp {
                                 ui.painter().text(rect.center(), egui::Align2::CENTER_CENTER, *icon, egui::FontId::proportional(19.0), color);
                                 ui.add_space(12.0);
                                 ui.label(RichText::new(catalog::for_category(*category).len().to_string()).size(28.0).strong());
-                                ui.label(RichText::new(t(label)).size(14.0).strong());
+                                ui.label(title_text(t(label), 14.0));
                                 ui.label(RichText::new(t(caption)).size(12.0).color(palette.muted));
                             })
                             .response
@@ -605,7 +617,7 @@ impl ProApp {
     fn operation_detail(&mut self, ui: &mut egui::Ui, palette: &Palette, actions: &mut Vec<Action>) {
         let operation = self.selected;
         ui.horizontal_wrapped(|ui| {
-            ui.label(RichText::new(operation.map_or(t("Select an operation"), |o| t(o.title))).size(20.0).strong());
+            ui.label(title_text(operation.map_or(t("Select an operation"), |o| t(o.title)), 20.0));
             ui.add_space(10.0);
             if operation.is_some_and(|o| o.is_destructive) {
                 chip(ui, t("CAUTION"), palette.warning_back, palette.warning_text);
@@ -872,12 +884,11 @@ impl ProApp {
     fn selector_body(&self, ui: &mut egui::Ui, palette: &Palette, actions: &mut Vec<Action>) {
         ui.horizontal(|ui| {
             let (rect, _) = ui.allocate_exact_size(vec2(30.0, 30.0), egui::Sense::hover());
-            ui.painter().rect_filled(rect, 8.0, Fixed::brand());
-            ui.painter().text(rect.center(), egui::Align2::CENTER_CENTER, "📦", egui::FontId::proportional(15.0), Color32::WHITE);
+            logo_tile(ui, rect, 15.0);
             ui.label(RichText::new(t("All-in-1 Converter")).size(14.0).strong().color(palette.muted));
         });
         ui.add_space(22.0);
-        ui.label(RichText::new(t("Choose your workspace")).size(28.0).strong());
+        ui.label(title_text(t("Choose your workspace"), 28.0));
         ui.label(RichText::new(t("Both interfaces use the same converter functions and configuration.")).size(14.0).color(palette.muted));
         ui.add_space(24.0);
 
@@ -977,9 +988,19 @@ fn nav_button(ui: &mut egui::Ui, icon: &str, label: &str, selected: bool, enable
 
 fn card_heading(ui: &mut egui::Ui, palette: &Palette, title: &str, subtitle: &str) {
     egui::Frame::new().inner_margin(egui::Margin { left: 12, right: 12, top: 8, bottom: 10 }).show(ui, |ui| {
-        ui.label(RichText::new(title).size(15.0).strong());
+        ui.label(title_text(title, 15.0));
         ui.label(RichText::new(subtitle).size(12.0).color(palette.muted));
     });
+}
+
+/// The logo: a yellow tile with a dark edge in the Hotel look, an indigo tile otherwise.
+fn logo_tile(ui: &egui::Ui, rect: egui::Rect, icon_size: f32) {
+    let corner = rect.width() * 0.25;
+    ui.painter().rect_filled(rect, corner, Fixed::logo());
+    if theme::hotel() {
+        ui.painter().rect_stroke(rect, corner, egui::Stroke::new(2.0_f32, Fixed::outline()), egui::StrokeKind::Inside);
+    }
+    ui.painter().text(rect.center(), egui::Align2::CENTER_CENTER, "📦", egui::FontId::proportional(icon_size), Fixed::logo_text());
 }
 
 /// One operation in a list: title (+ CAUTION), two lines of description, optional chevron.

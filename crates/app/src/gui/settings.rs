@@ -272,6 +272,8 @@ impl SettingsPage {
         });
 
         self.language_card(ui, &palette);
+        ui.add_space(12.0);
+        self.look_card(ui, &palette);
         self.hotel_card(ui, &palette);
 
         let mut offset = 0;
@@ -309,6 +311,31 @@ impl SettingsPage {
                     super::i18n::set(chosen);
                     let saved = ConfigIniFile::load(None).and_then(|mut file| {
                         file.set("language", chosen)?;
+                        file.save()
+                    });
+                    if let Err(error) = saved {
+                        self.result = (tf("Could not save config.ini: {error}", &[("error", &error.to_string())]), Tone::Error);
+                    }
+                }
+            });
+        });
+    }
+
+    /// The look (Hotel or Professional): applied and saved to config.ini (`look`) right away.
+    fn look_card(&mut self, ui: &mut egui::Ui, palette: &Palette) {
+        card(ui, palette, egui::Margin::same(20), |ui| {
+            ui.horizontal(|ui| {
+                fixed_column(ui, 240.0, |ui| {
+                    label_block(ui, palette, t("Look"), t("Hotel: the hotel's blues, outlined cards and pixel titles. Professional: neutral and compact."))
+                });
+                let mut hotel = super::theme::hotel();
+                ui.selectable_value(&mut hotel, true, t("Hotel"));
+                ui.selectable_value(&mut hotel, false, t("Professional"));
+                if hotel != super::theme::hotel() {
+                    super::theme::set_hotel(hotel);
+                    super::theme::install_fonts(ui.ctx());
+                    let saved = ConfigIniFile::load(None).and_then(|mut file| {
+                        file.set("look", super::theme::look_name(hotel))?;
                         file.save()
                     });
                     if let Err(error) = saved {

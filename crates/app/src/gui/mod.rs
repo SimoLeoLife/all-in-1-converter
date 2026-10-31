@@ -2,6 +2,7 @@
 //! live output and an answer box, and the config.ini editor.
 
 mod app_ui;
+mod banner;
 mod history;
 mod i18n;
 mod preview;
@@ -24,7 +25,7 @@ use crate::catalog::{self, OperationCategory, OperationDefinition};
 use crate::runner::{OperationResult, OperationRunner, RunnerEvent};
 use log::LogState;
 use theme::{Fixed, Palette};
-use widgets::{card, chip, dot, primary_button, secondary_button};
+use widgets::{card, card_frame, chip, dot, primary_button, secondary_button, title_text};
 
 /// Operations that read or write the asset workspace when one is connected.
 const WORKSPACE_OPERATION_IDS: &[&str] = &[
@@ -46,6 +47,7 @@ const MODULES: &[(OperationCategory, &str, &str, &str, &str)] = &[
 
 pub fn run(runtime: tokio::runtime::Handle, show_selector: bool) {
     i18n::init();
+    theme::init();
     let size = if show_selector { [860.0, 440.0] } else { [1380.0, 860.0] };
     let min = if show_selector { [760.0, 420.0] } else { [1040.0, 700.0] };
     let mut viewport = egui::ViewportBuilder::default()
@@ -67,6 +69,7 @@ pub fn run(runtime: tokio::runtime::Handle, show_selector: bool) {
         options,
         Box::new(move |cc| {
             cc.egui_ctx.options_mut(|o| o.theme_preference = egui::ThemePreference::System);
+            theme::install_fonts(&cc.egui_ctx);
             Ok(Box::new(ProApp::new(runtime, show_selector)))
         }),
     );

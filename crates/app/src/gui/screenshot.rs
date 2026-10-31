@@ -1,6 +1,7 @@
 //! Debug aid: `HABBO_SCREENSHOT=<file.png>` saves one screenshot of the window and closes it.
 //! `HABBO_SCREENSHOT_PAGE` picks the page (dashboard, workspace, settings, habbo, nitro, tools,
-//! database, about, selector, confirm); `HABBO_SCREENSHOT_THEME=dark|light` forces the theme.
+//! database, about, selector, confirm); `HABBO_SCREENSHOT_THEME=dark|light` forces the theme and
+//! `HABBO_SCREENSHOT_LOOK=hotel|professional` the look.
 
 use eframe::egui;
 
@@ -14,6 +15,11 @@ pub fn tick(app: &mut ProApp, ctx: &egui::Context) {
     if frame == 0 {
         if let Ok(lang) = std::env::var("HABBO_SCREENSHOT_LANG") {
             super::i18n::set(&lang);
+            app.status_text = super::i18n::t("Ready").into();
+        }
+        if let Ok(look) = std::env::var("HABBO_SCREENSHOT_LOOK") {
+            super::theme::set_hotel(!look.eq_ignore_ascii_case("professional"));
+            super::theme::install_fonts(ctx);
         }
         match std::env::var("HABBO_SCREENSHOT_THEME").as_deref() {
             Ok("dark") => ctx.set_theme(egui::Theme::Dark),
