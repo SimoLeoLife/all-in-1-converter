@@ -11,7 +11,14 @@ use crate::common::{self, colored, FetchError};
 use crate::resume;
 use crate::model;
 
-const XML_PATH: &str = "./Habbo_Default/files/txt/furnidata_xml.xml";
+/// Where [`download_furnidata`] saves furnidata_xml.xml.
+pub const XML_PATH: &str = "./Habbo_Default/files/txt/furnidata_xml.xml";
+
+/// Where [`download_furnidata`] writes FurnitureData.json: the Asset Workspace gamedata folder
+/// when one is configured, else Habbo_Default/files/json.
+pub fn furniture_data_json_path() -> PathBuf {
+    runtime::router().game_data_file("FurnitureData.json", "./Habbo_Default/files/json/FurnitureData.json")
+}
 
 /// `FurnidataDownloader.DownloadFurnidata`.
 pub async fn download_furnidata() -> Result<()> {
@@ -28,8 +35,7 @@ pub async fn download_furnidata() -> Result<()> {
         download_file(&furnidata_xml, XML_PATH, "furnidata_xml.xml").await?;
 
         let workspace = runtime::router();
-        let legacy_output = "./Habbo_Default/files/json/FurnitureData.json";
-        let target_output: PathBuf = workspace.game_data_file("FurnitureData.json", legacy_output);
+        let target_output: PathBuf = furniture_data_json_path();
 
         let xml = common::decode_text(&std::fs::read(XML_PATH)?);
         let json = model::furniture_data_json(&xml)?;

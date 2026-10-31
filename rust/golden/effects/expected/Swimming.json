@@ -1,0 +1,612 @@
+{
+  "assets": {
+    "h_std_fx29_1_1_0_1": {
+      "x": 0,
+      "y": 0
+    },
+    "h_std_fx29_1_1_0_2": {
+      "x": 0,
+      "y": 0
+    },
+    "h_std_fx29_1_1_0_3": {
+      "x": 0,
+      "y": 0
+    },
+    "h_std_fx29_1_1_0_4": {
+      "x": 0,
+      "y": 0
+    },
+    "h_std_fx29_1_1_0_5": {
+      "x": 0,
+      "y": 0
+    },
+    "h_std_fx29_2_1_0_1": {
+      "x": 0,
+      "y": 0
+    },
+    "h_std_fx29_2_1_0_2": {
+      "x": 0,
+      "y": 0
+    },
+    "h_std_fx29_2_1_0_3": {
+      "x": 0,
+      "y": 0
+    }
+  },
+  "aliases": {},
+  "animations": {
+    "Swimming": {
+      "name": "fx.29",
+      "desc": "Swimming",
+      "removes": [
+        {
+          "id": "bd"
+        },
+        {
+          "id": "lh"
+        },
+        {
+          "id": "rh"
+        },
+        {
+          "id": "ch"
+        },
+        {
+          "id": "rs"
+        },
+        {
+          "id": "ls"
+        },
+        {
+          "id": "cc"
+        },
+        {
+          "id": "mc"
+        },
+        {
+          "id": "pt"
+        },
+        {
+          "id": "lc"
+        },
+        {
+          "id": "mcl"
+        },
+        {
+          "id": "ptl"
+        },
+        {
+          "id": "rc"
+        },
+        {
+          "id": "mcr"
+        },
+        {
+          "id": "ptr"
+        },
+        {
+          "id": "sh"
+        },
+        {
+          "id": "lg"
+        },
+        {
+          "id": "ca"
+        },
+        {
+          "id": "wa"
+        },
+        {
+          "id": "cp"
+        },
+        {
+          "id": "ri"
+        },
+        {
+          "id": "li"
+        },
+        {
+          "id": "mco"
+        },
+        {
+          "id": "mcu"
+        }
+      ],
+      "sprites": [
+        {
+          "id": "fx29_1",
+          "member": "std_fx29_1_1",
+          "directionList": [
+            {
+              "id": 0,
+              "dz": -1
+            },
+            {
+              "id": 1,
+              "dz": -1
+            },
+            {
+              "id": 2,
+              "dz": -1
+            },
+            {
+              "id": 3,
+              "dz": -1
+            },
+            {
+              "id": 4,
+              "dz": -1
+            },
+            {
+              "id": 5,
+              "dz": -1
+            },
+            {
+              "id": 6,
+              "dz": -1
+            },
+            {
+              "id": 7,
+              "dz": -1
+            }
+          ]
+        },
+        {
+          "id": "fx29_2",
+          "member": "std_fx29_2_1",
+          "directionList": [
+            {
+              "id": 0,
+              "dz": -1
+            },
+            {
+              "id": 1,
+              "dz": -1
+            },
+            {
+              "id": 2,
+              "dz": -1
+            },
+            {
+              "id": 3,
+              "dz": -1
+            },
+            {
+              "id": 4,
+              "dz": -1
+            },
+            {
+              "id": 5,
+              "dz": -1
+            },
+            {
+              "id": 6,
+              "dz": -1
+            },
+            {
+              "id": 7,
+              "dz": -1
+            }
+          ]
+        },
+        {
+          "id": "avatar"
+        }
+      ],
+      "frames": [
+        {
+          "fxs": [
+            {
+              "id": "avatar",
+              "frame": 0,
+              "dy": 50
+            },
+            {
+              "id": "fx29_1",
+              "frame": 1,
+              "dx": 10,
+              "dy": -10,
+              "action": "Default"
+            },
+            {
+              "id": "fx29_2",
+              "frame": 1,
+              "dx": 10,
+              "dy": -10,
+              "action": "Default"
+            }
+          ],
+          "bodyparts": [
+            {
+              "id": "head",
+              "dy": 0
+            },
+            {
+              "id": "leftarm",
+              "dy": 0
+            },
+            {
+              "id": "rightarm",
+              "dy": 0
+            },
+            {
+              "id": "torso",
+              "dy": 0
+            }
+          ]
+        },
+        {
+          "fxs": [
+            {
+              "id": "avatar",
+              "frame": 0,
+              "dy": 51
+            },
+            {
+              "id": "fx29_1",
+              "frame": 2,
+              "dx": 10,
+              "dy": -10,
+              "action": "Default"
+            },
+            {
+              "id": "fx29_2",
+              "frame": 2,
+              "dx": 10,
+              "dy": -10,
+              "action": "Default"
+            }
+          ],
+          "bodyparts": [
+            {
+              "id": "head",
+              "dy": 0
+            },
+            {
+              "id": "leftarm",
+              "dy": 0
+            },
+            {
+              "id": "rightarm",
+              "dy": 0
+            },
+            {
+              "id": "torso",
+              "dy": 0
+            }
+          ]
+        },
+        {
+          "fxs": [
+            {
+              "id": "avatar",
+              "frame": 0,
+              "dy": 52
+            },
+            {
+              "id": "fx29_1",
+              "frame": 3,
+              "dx": 10,
+              "dy": -10,
+              "action": "Default"
+            },
+            {
+              "id": "fx29_2",
+              "frame": 3,
+              "dx": 10,
+              "dy": -10,
+              "action": "Default"
+            }
+          ],
+          "bodyparts": [
+            {
+              "id": "head",
+              "dy": 0
+            },
+            {
+              "id": "leftarm",
+              "dy": 0
+            },
+            {
+              "id": "rightarm",
+              "dy": 0
+            },
+            {
+              "id": "torso",
+              "dy": 0
+            }
+          ]
+        },
+        {
+          "fxs": [
+            {
+              "id": "avatar",
+              "frame": 0,
+              "dy": 53
+            },
+            {
+              "id": "fx29_1",
+              "frame": 4,
+              "dx": 10,
+              "dy": -10,
+              "action": "Default"
+            },
+            {
+              "id": "fx29_2",
+              "frame": 1,
+              "dx": 10,
+              "dy": -10,
+              "action": "Default"
+            }
+          ],
+          "bodyparts": [
+            {
+              "id": "head",
+              "dy": 0
+            },
+            {
+              "id": "leftarm",
+              "dy": 0
+            },
+            {
+              "id": "rightarm",
+              "dy": 0
+            },
+            {
+              "id": "torso",
+              "dy": 0
+            }
+          ]
+        },
+        {
+          "fxs": [
+            {
+              "id": "avatar",
+              "frame": 0,
+              "dy": 52
+            },
+            {
+              "id": "fx29_1",
+              "frame": 5,
+              "dx": 10,
+              "dy": -10,
+              "action": "Default"
+            },
+            {
+              "id": "fx29_2",
+              "frame": 2,
+              "dx": 10,
+              "dy": -10,
+              "action": "Default"
+            }
+          ],
+          "bodyparts": [
+            {
+              "id": "head",
+              "dy": 0
+            },
+            {
+              "id": "leftarm",
+              "dy": 0
+            },
+            {
+              "id": "rightarm",
+              "dy": 0
+            },
+            {
+              "id": "torso",
+              "dy": 0
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "name": "Swimming",
+  "spritesheet": {
+    "frames": {
+      "Swimming_h_std_fx29_1_1_0_1": {
+        "frame": {
+          "x": 2,
+          "y": 2,
+          "w": 39,
+          "h": 50
+        },
+        "rotated": false,
+        "trimmed": false,
+        "spriteSourceSize": {
+          "x": 0,
+          "y": 0,
+          "w": 39,
+          "h": 50
+        },
+        "sourceSize": {
+          "w": 39,
+          "h": 50
+        },
+        "pivot": {
+          "x": 0.5,
+          "y": 0.5
+        }
+      },
+      "Swimming_h_std_fx29_1_1_0_2": {
+        "frame": {
+          "x": 2,
+          "y": 54,
+          "w": 39,
+          "h": 50
+        },
+        "rotated": false,
+        "trimmed": false,
+        "spriteSourceSize": {
+          "x": 0,
+          "y": 0,
+          "w": 39,
+          "h": 50
+        },
+        "sourceSize": {
+          "w": 39,
+          "h": 50
+        },
+        "pivot": {
+          "x": 0.5,
+          "y": 0.5
+        }
+      },
+      "Swimming_h_std_fx29_1_1_0_3": {
+        "frame": {
+          "x": 2,
+          "y": 106,
+          "w": 39,
+          "h": 50
+        },
+        "rotated": false,
+        "trimmed": false,
+        "spriteSourceSize": {
+          "x": 0,
+          "y": 0,
+          "w": 39,
+          "h": 50
+        },
+        "sourceSize": {
+          "w": 39,
+          "h": 50
+        },
+        "pivot": {
+          "x": 0.5,
+          "y": 0.5
+        }
+      },
+      "Swimming_h_std_fx29_1_1_0_4": {
+        "frame": {
+          "x": 2,
+          "y": 158,
+          "w": 39,
+          "h": 50
+        },
+        "rotated": false,
+        "trimmed": false,
+        "spriteSourceSize": {
+          "x": 0,
+          "y": 0,
+          "w": 39,
+          "h": 50
+        },
+        "sourceSize": {
+          "w": 39,
+          "h": 50
+        },
+        "pivot": {
+          "x": 0.5,
+          "y": 0.5
+        }
+      },
+      "Swimming_h_std_fx29_1_1_0_5": {
+        "frame": {
+          "x": 2,
+          "y": 210,
+          "w": 39,
+          "h": 50
+        },
+        "rotated": false,
+        "trimmed": false,
+        "spriteSourceSize": {
+          "x": 0,
+          "y": 0,
+          "w": 39,
+          "h": 50
+        },
+        "sourceSize": {
+          "w": 39,
+          "h": 50
+        },
+        "pivot": {
+          "x": 0.5,
+          "y": 0.5
+        }
+      },
+      "Swimming_h_std_fx29_2_1_0_1": {
+        "frame": {
+          "x": 2,
+          "y": 262,
+          "w": 45,
+          "h": 33
+        },
+        "rotated": false,
+        "trimmed": false,
+        "spriteSourceSize": {
+          "x": 0,
+          "y": 0,
+          "w": 45,
+          "h": 33
+        },
+        "sourceSize": {
+          "w": 45,
+          "h": 33
+        },
+        "pivot": {
+          "x": 0.5,
+          "y": 0.5
+        }
+      },
+      "Swimming_h_std_fx29_2_1_0_2": {
+        "frame": {
+          "x": 2,
+          "y": 297,
+          "w": 45,
+          "h": 33
+        },
+        "rotated": false,
+        "trimmed": false,
+        "spriteSourceSize": {
+          "x": 0,
+          "y": 0,
+          "w": 45,
+          "h": 33
+        },
+        "sourceSize": {
+          "w": 45,
+          "h": 33
+        },
+        "pivot": {
+          "x": 0.5,
+          "y": 0.5
+        }
+      },
+      "Swimming_h_std_fx29_2_1_0_3": {
+        "frame": {
+          "x": 2,
+          "y": 332,
+          "w": 45,
+          "h": 33
+        },
+        "rotated": false,
+        "trimmed": false,
+        "spriteSourceSize": {
+          "x": 0,
+          "y": 0,
+          "w": 45,
+          "h": 33
+        },
+        "sourceSize": {
+          "w": 45,
+          "h": 33
+        },
+        "pivot": {
+          "x": 0.5,
+          "y": 0.5
+        }
+      }
+    },
+    "meta": {
+      "image": "Swimming.webp",
+      "format": "RGBA8888",
+      "size": {
+        "w": 49,
+        "h": 367
+      },
+      "scale": 1,
+      "converter": "All-in-1-dowload-tool"
+    }
+  }
+}

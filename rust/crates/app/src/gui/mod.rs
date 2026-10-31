@@ -3,6 +3,7 @@
 
 mod app_ui;
 mod history;
+mod i18n;
 mod preview;
 mod flags;
 mod log;
@@ -44,6 +45,7 @@ const MODULES: &[(OperationCategory, &str, &str, &str, &str)] = &[
 ];
 
 pub fn run(runtime: tokio::runtime::Handle, show_selector: bool) {
+    i18n::init();
     let size = if show_selector { [860.0, 440.0] } else { [1380.0, 860.0] };
     let min = if show_selector { [760.0, 420.0] } else { [1040.0, 700.0] };
     let mut viewport = egui::ViewportBuilder::default()
@@ -211,7 +213,7 @@ impl ProApp {
             is_running: false,
             has_finished_run: false,
             last_run_succeeded: false,
-            status_text: "Ready".into(),
+            status_text: i18n::t("Ready").into(),
             input_text: String::new(),
             history: history::History::load("logs"),
             queue: std::collections::VecDeque::new(),
@@ -222,7 +224,7 @@ impl ProApp {
             settings: settings::SettingsPage::new(runtime.clone()),
             workspace: WorkspaceView {
                 root_path: store_root,
-                status: "Choose your nitro-assets folder".into(),
+                status: i18n::t("Choose your nitro-assets folder").into(),
                 paths: None,
                 folders: Vec::new(),
                 busy: None,
@@ -252,7 +254,7 @@ impl ProApp {
     // ------------------------------------------------------------ navigation
 
     fn title(&self) -> (&'static str, &'static str) {
-        match self.page {
+        let (title, subtitle) = match self.page {
             Page::Dashboard => ("Dashboard", "Your Habbo asset workstation at a glance"),
             Page::Workspace => ("Asset Workspace", "Connect the converter directly to your Nitro asset folders"),
             Page::Settings => ("Settings", "Edit config.ini: Habbo hotel, downloads, Nitro retro and database"),
@@ -261,7 +263,8 @@ impl ProApp {
             Page::Category(OperationCategory::HotelTools) => ("Hotel Tools", "Merge, (de)compile and convert to .nitro / .hab (json + WebP Lossless)"),
             Page::Category(OperationCategory::Database) => ("Database", "Inspect and maintain the configured hotel database"),
             Page::Category(OperationCategory::General) => ("About", "Version and project information"),
-        }
+        };
+        (i18n::t(title), i18n::t(subtitle))
     }
 
     /// Goes to a page, asking first when the settings have unsaved edits.
@@ -321,7 +324,7 @@ impl ProApp {
         }
         self.log.clear();
         self.has_finished_run = false;
-        self.status_text = "Ready".into();
+        self.status_text = i18n::t("Ready").into();
     }
 
     /// Run now (`After::Run`) or add to the queue, after the workspace / database confirmations.
@@ -351,7 +354,7 @@ impl ProApp {
     fn enqueue(&mut self, operation: &'static OperationDefinition, answers: Vec<String>) {
         self.queue.push_back(QueuedRun { operation, answers });
         if self.is_running {
-            self.status_text = format!("Queued: {} ({} waiting)", operation.title, self.queue.len());
+            self.status_text = i18n::tf("Queued: {operation} ({count} waiting)", &[("operation", i18n::t(operation.title)), ("count", &self.queue.len().to_string())]);
         } else {
             self.start_next_queued();
         }
@@ -369,7 +372,7 @@ impl ProApp {
         self.log.clear();
         self.has_finished_run = false;
         self.is_running = true;
-        self.status_text = format!("Running: {}", operation.title);
+        self.status_text = i18n::tf("Running: {operation}", &[("operation", i18n::t(operation.title))]);
         self.focus_input = true;
         self.events = None;
         // The repaint closure is installed on the first frame (it needs the egui context).
@@ -391,7 +394,7 @@ impl ProApp {
         let id = format!("tools.swf-{kind}-{}", extension.trim_start_matches('.'));
         match catalog::find(&id) {
             Some(operation) if copied > 0 => {
-                self.status_text = format!("Copied {copied} SWF file(s) into {}", folder.display());
+                self.status_text = i18n::tf("Copied {count} SWF file(s) into {path}", &[("count", &copied.to_string()), ("path", &folder.display().to_string())]);
                 if workspace_runtime::router().is_configured() && WORKSPACE_OPERATION_IDS.contains(&operation.id) {
                     // Ask as usual; the source prompt is then answered by hand.
                     self.dialog = Some(Dialog::Workspace(operation, After::Queue));
@@ -399,7 +402,7 @@ impl ProApp {
                     self.enqueue(operation, vec!["I".into()]);
                 }
             }
-            _ => self.status_text = format!("Could not copy the dropped files into {}", folder.display()),
+            _ => self.status_text = i18n::tf("Could not copy the dropped files into {path}", &[("path", &folder.display().to_string())]),
         }
     }
 
@@ -425,12 +428,13 @@ impl ProApp {
             self.has_finished_run = true;
             self.last_run_succeeded = result.succeeded;
             let title = self.running_title.unwrap_or("Operation");
+            let shown = i18n::t(title);
             self.status_text = if result.succeeded {
-                format!("{title} completed in {}", duration(result.elapsed))
+                i18n::tf("{operation} completed in {time}", &[("operation", shown), ("time", &duration(result.elapsed))])
             } else if result.cancelled {
-                format!("{title} cancelled after {}", duration(result.elapsed))
+                i18n::tf("{operation} cancelled after {time}", &[("operation", shown), ("time", &duration(result.elapsed))])
             } else {
-                format!("{title} failed: {}", result.error.unwrap_or_default())
+                i18n::tf("{operation} failed: {error}", &[("operation", shown), ("error", &result.error.unwrap_or_default())])
             };
             let id = self.running_id.unwrap_or("operation");
             let log_text = self.log.text().to_string();
@@ -447,7 +451,7 @@ impl ProApp {
                 } else {
                     let waiting = self.queue.len();
                     self.queue.clear();
-                    self.status_text = format!("{} - queue stopped, {waiting} run(s) dropped", self.status_text);
+                    self.status_text = i18n::tf("{status} - queue stopped, {count} run(s) dropped", &[("status", &self.status_text), ("count", &waiting.to_string())]);
                 }
             }
         }
@@ -468,7 +472,7 @@ impl ProApp {
     fn refresh_workspace(&mut self, save: bool) {
         let root = self.workspace.root_path.trim().to_string();
         if root.is_empty() {
-            self.workspace.status = "Choose your nitro-assets folder".into();
+            self.workspace.status = i18n::t("Choose your nitro-assets folder").into();
             return;
         }
         let (sender, receiver) = mpsc::channel();
@@ -500,7 +504,7 @@ impl ProApp {
                 let existing = folders.iter().filter(|f| f.exists).count();
                 let total: usize = folders.iter().map(|f| f.file_count).sum();
                 self.workspace.root_path = paths.root.display().to_string();
-                self.workspace.status = format!("{existing}/5 folders ready · {} files", habbo_core::console::n0(total as i64));
+                self.workspace.status = i18n::tf("{ready}/5 folders ready · {count} files", &[("ready", &existing.to_string()), ("count", &habbo_core::console::n0(total as i64))]);
                 workspace_runtime::set(Some(paths.clone()));
                 self.workspace.paths = Some(paths);
                 self.workspace.folders = folders;

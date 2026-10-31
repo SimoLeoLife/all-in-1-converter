@@ -1,0 +1,217 @@
+{
+  "assets": {
+    "h_lay_ha_3627_2_0": {
+      "x": 28,
+      "y": 47,
+      "source": "h_lsp_ha_3627_2_0"
+    },
+    "h_lsp_ha_3627_2_0": {
+      "x": -35,
+      "y": -112
+    },
+    "h_std_ha_3627_0_0": {
+      "x": -15,
+      "y": 88
+    },
+    "h_std_ha_3627_1_0": {
+      "x": -16,
+      "y": 87
+    },
+    "h_std_ha_3627_2_0": {
+      "x": -16,
+      "y": 86
+    },
+    "h_std_ha_3627_3_0": {
+      "x": -17,
+      "y": 86
+    },
+    "h_std_ha_3627_7_0": {
+      "x": -18,
+      "y": 84
+    },
+    "h_spk_ha_3627_0_0": {
+      "x": -15,
+      "y": 89,
+      "source": "h_std_ha_3627_0_0"
+    },
+    "h_spk_ha_3627_1_0": {
+      "x": -16,
+      "y": 88,
+      "source": "h_std_ha_3627_1_0"
+    },
+    "h_spk_ha_3627_2_0": {
+      "x": -16,
+      "y": 87,
+      "source": "h_std_ha_3627_2_0"
+    },
+    "h_spk_ha_3627_3_0": {
+      "x": -17,
+      "y": 87,
+      "source": "h_std_ha_3627_3_0"
+    },
+    "h_spk_ha_3627_7_0": {
+      "x": -18,
+      "y": 85,
+      "source": "h_std_ha_3627_7_0"
+    }
+  },
+  "name": "hat_U_chefhat",
+  "spritesheet": {
+    "frames": {
+      "hat_U_chefhat_h_lsp_ha_3627_2_0": {
+        "frame": {
+          "x": 2,
+          "y": 2,
+          "w": 27,
+          "h": 32
+        },
+        "rotated": false,
+        "trimmed": false,
+        "spriteSourceSize": {
+          "x": 0,
+          "y": 0,
+          "w": 27,
+          "h": 32
+        },
+        "sourceSize": {
+          "w": 27,
+          "h": 32
+        },
+        "pivot": {
+          "x": 0.5,
+          "y": 0.5
+        }
+      },
+      "hat_U_chefhat_h_std_ha_3627_0_0": {
+        "frame": {
+          "x": 2,
+          "y": 36,
+          "w": 32,
+          "h": 25
+        },
+        "rotated": false,
+        "trimmed": false,
+        "spriteSourceSize": {
+          "x": 0,
+          "y": 0,
+          "w": 32,
+          "h": 25
+        },
+        "sourceSize": {
+          "w": 32,
+          "h": 25
+        },
+        "pivot": {
+          "x": 0.5,
+          "y": 0.5
+        }
+      },
+      "hat_U_chefhat_h_std_ha_3627_1_0": {
+        "frame": {
+          "x": 2,
+          "y": 63,
+          "w": 32,
+          "h": 24
+        },
+        "rotated": false,
+        "trimmed": false,
+        "spriteSourceSize": {
+          "x": 0,
+          "y": 0,
+          "w": 32,
+          "h": 24
+        },
+        "sourceSize": {
+          "w": 32,
+          "h": 24
+        },
+        "pivot": {
+          "x": 0.5,
+          "y": 0.5
+        }
+      },
+      "hat_U_chefhat_h_std_ha_3627_2_0": {
+        "frame": {
+          "x": 2,
+          "y": 89,
+          "w": 33,
+          "h": 24
+        },
+        "rotated": false,
+        "trimmed": false,
+        "spriteSourceSize": {
+          "x": 0,
+          "y": 0,
+          "w": 33,
+          "h": 24
+        },
+        "sourceSize": {
+          "w": 33,
+          "h": 24
+        },
+        "pivot": {
+          "x": 0.5,
+          "y": 0.5
+        }
+      },
+      "hat_U_chefhat_h_std_ha_3627_3_0": {
+        "frame": {
+          "x": 2,
+          "y": 115,
+          "w": 31,
+          "h": 22
+        },
+        "rotated": false,
+        "trimmed": false,
+        "spriteSourceSize": {
+          "x": 0,
+          "y": 0,
+          "w": 31,
+          "h": 22
+        },
+        "sourceSize": {
+          "w": 31,
+          "h": 22
+        },
+        "pivot": {
+          "x": 0.5,
+          "y": 0.5
+        }
+      },
+      "hat_U_chefhat_h_std_ha_3627_7_0": {
+        "frame": {
+          "x": 2,
+          "y": 139,
+          "w": 31,
+          "h": 22
+        },
+        "rotated": false,
+        "trimmed": false,
+        "spriteSourceSize": {
+          "x": 0,
+          "y": 0,
+          "w": 31,
+          "h": 22
+        },
+        "sourceSize": {
+          "w": 31,
+          "h": 22
+        },
+        "pivot": {
+          "x": 0.5,
+          "y": 0.5
+        }
+      }
+    },
+    "meta": {
+      "image": "hat_U_chefhat.webp",
+      "format": "RGBA8888",
+      "size": {
+        "w": 37,
+        "h": 163
+      },
+      "scale": 1,
+      "converter": "All-in-1-dowload-tool"
+    }
+  }
+}

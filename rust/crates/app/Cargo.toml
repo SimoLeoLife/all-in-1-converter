@@ -16,6 +16,7 @@ habbo-swf.workspace = true
 habbo-tools.workspace = true
 habbo-downloads.workspace = true
 habbo-db.workspace = true
+habbo-pipeline = { path = "../pipeline" }
 habbo-furni = { path = "../furni" }
 habbo-figure = { path = "../figure" }
 anyhow.workspace = true
@@ -31,6 +32,7 @@ rfd.workspace = true
 crossterm.workspace = true
 serde.workspace = true
 serde_json.workspace = true
+sys-locale = "0.3"
 
 [target.'cfg(windows)'.dependencies]
 windows-sys = { version = "0.59", features = ["Win32_System_Console"] }

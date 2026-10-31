@@ -408,6 +408,9 @@ pub(crate) struct Generator<'a> {
     pub catalog_items_sql: Vec<String>,
     /// Where NitroBundle unpacks; `None` = NitroCompiler/extracted/furni (the C# folder).
     bundle_extract_dir: Option<PathBuf>,
+    /// Only these classnames (lower case) get rows; `None` = every furni (the C# behaviour).
+    /// A skipped base furni still lends its settings to its wanted colour variants.
+    only: Option<HashSet<String>>,
 }
 
 fn furnitypes<'a>(furnidata: &'a Value, section: &str) -> Result<&'a Vec<Value>> {
@@ -449,7 +452,17 @@ impl<'a> Generator<'a> {
             items_base_sql: Vec::new(),
             catalog_items_sql: Vec::new(),
             bundle_extract_dir: None,
+            only: None,
         })
+    }
+
+    /// Limits the rows to these classnames (compared case-insensitively).
+    pub fn set_only(&mut self, only: Option<&HashSet<String>>) {
+        self.only = only.map(|set| set.iter().map(|name| name.to_lowercase()).collect());
+    }
+
+    fn wanted(&self, classname: &str) -> bool {
+        self.only.as_ref().is_none_or(|only| only.contains(&classname.to_lowercase()))
     }
 
     fn next_id(&mut self) -> i32 {
@@ -523,6 +536,9 @@ impl<'a> Generator<'a> {
                 outln!("Skipping unknown type for variant: {variant_classname}");
                 continue;
             }
+            if !self.wanted(&variant_classname) {
+                continue;
+            }
             let (sprite_id, offer_id, id) = self.ids_for(variant)?;
             let count = settings.interaction_modes_count;
             if settings.file_type.eq_ignore_ascii_case("SWF") {
@@ -587,7 +603,7 @@ impl<'a> Generator<'a> {
             return Ok(());
         }
 
-        let (sprite_id, offer_id, id) = self.ids_for(item_data)?;
+        let ids = if self.wanted(&classname) { Some(self.ids_for(item_data)?) } else { None };
 
         // Wall items ('i') don't use tile dimensions; store neutral server defaults.
         if kind == "i" {
@@ -596,9 +612,11 @@ impl<'a> Generator<'a> {
             stack_height = 0.00;
         }
 
-        let size = [double_to_string(width), double_to_string(length), double_to_string(stack_height)];
-        self.items_base_sql.push(items_base_insert(id, sprite_id, &classname, [&size[0], &size[1], &size[2]], ["0", "0", "0", "0"], kind, interaction_modes_count));
-        self.catalog_items_sql.push(catalog_item_insert(self.target, id, self.page_id, offer_id, &classname));
+        if let Some((sprite_id, offer_id, id)) = ids {
+            let size = [double_to_string(width), double_to_string(length), double_to_string(stack_height)];
+            self.items_base_sql.push(items_base_insert(id, sprite_id, &classname, [&size[0], &size[1], &size[2]], ["0", "0", "0", "0"], kind, interaction_modes_count));
+            self.catalog_items_sql.push(catalog_item_insert(self.target, id, self.page_id, offer_id, &classname));
+        }
 
         self.remember(file_name, FileSettings { interaction_modes_count, width, length, height: stack_height, file_type: "SWF" });
         Ok(())
@@ -624,7 +642,7 @@ impl<'a> Generator<'a> {
             return Ok(());
         }
 
-        let (sprite_id, offer_id, id) = self.ids_for(item_data)?;
+        let ids = if self.wanted(&classname) { Some(self.ids_for(item_data)?) } else { None };
 
         let temp_dir = std::env::temp_dir().join("NitroExtraction").join(file_name);
         if temp_dir.is_dir() {
@@ -652,18 +670,20 @@ impl<'a> Generator<'a> {
             height = 0.00;
         }
 
-        let bit = |b: bool| if b { "1" } else { "0" };
-        let size = [double_to_string(width), double_to_string(length), double_to_string(height)];
-        self.items_base_sql.push(items_base_insert(
-            id,
-            sprite_id,
-            &classname,
-            [&size[0], &size[1], &size[2]],
-            [bit(is_stackable), bit(can_sit_on), bit(can_lay_on), bit(can_stand_on)],
-            kind,
-            interaction_modes_count,
-        ));
-        self.catalog_items_sql.push(catalog_item_insert(self.target, id, self.page_id, offer_id, &classname));
+        if let Some((sprite_id, offer_id, id)) = ids {
+            let bit = |b: bool| if b { "1" } else { "0" };
+            let size = [double_to_string(width), double_to_string(length), double_to_string(height)];
+            self.items_base_sql.push(items_base_insert(
+                id,
+                sprite_id,
+                &classname,
+                [&size[0], &size[1], &size[2]],
+                [bit(is_stackable), bit(can_sit_on), bit(can_lay_on), bit(can_stand_on)],
+                kind,
+                interaction_modes_count,
+            ));
+            self.catalog_items_sql.push(catalog_item_insert(self.target, id, self.page_id, offer_id, &classname));
+        }
 
         self.remember(file_name, FileSettings { interaction_modes_count, width, length, height, file_type: "Nitro" });
 
@@ -753,6 +773,14 @@ pub async fn generate_sql_builders_club() -> Result<()> {
 
 /// `SQLGenerator.GenerateSQL(FurnitureSqlTarget)`.
 pub async fn generate_sql(target: FurnitureSqlTarget) -> Result<()> {
+    generate_sql_only(target, None).await.map(|_| ())
+}
+
+/// [`generate_sql`] limited to these furnidata classnames (case-insensitive; `None` = all, the
+/// same run as [`generate_sql`]). The furni files of other classnames are still read, so a
+/// wanted colour variant ("name*3") gets the settings of its base file "name". Returns the
+/// written .sql file (`None` when the run stopped before writing one).
+pub async fn generate_sql_only(target: FurnitureSqlTarget, only: Option<&HashSet<String>>) -> Result<Option<PathBuf>> {
     let base_dir = std::env::current_dir()?.join("Generate");
     let furnidata_dir = base_dir.join("Furnidata");
     move_legacy_furniture_folder(&base_dir)?;
@@ -763,7 +791,7 @@ pub async fn generate_sql(target: FurnitureSqlTarget) -> Result<()> {
     let catalog_table = catalog_items_table(target);
 
     if check_for_duplicate_files(&furniture_dir)? {
-        return Ok(());
+        return Ok(None);
     }
 
     if target == FurnitureSqlTarget::BuildersClub {
@@ -782,11 +810,12 @@ pub async fn generate_sql(target: FurnitureSqlTarget) -> Result<()> {
     // Only a missing file is reported; every other load error ends the run (FileNotFoundException).
     if !furnidata_path.is_dir() && !furnidata_path.is_file() {
         outln!("FurnitureData.json is missing in Generate/Furnidata/.");
-        return Ok(());
+        return Ok(None);
     }
     let furnidata = Value::Object(habbo_core::json::load_object(&furnidata_path)?);
 
     let mut generator = Generator::new(&furnidata, target, start_id, page_id)?;
+    generator.set_only(only);
     generator.process(&furniture_dir).await?;
 
     let timestamp = chrono::Local::now().format("%Y%m%d%H%M%S");
@@ -794,7 +823,7 @@ pub async fn generate_sql(target: FurnitureSqlTarget) -> Result<()> {
     let output_path = output_dir.join(format!("{prefix}_{timestamp}.sql"));
     std::fs::write(&output_path, write_all_lines_text(&generator.combined_sql()))?;
     outln!("📦 SQL file generated successfully:\n {}", output_path.display());
-    Ok(())
+    Ok(Some(output_path))
 }
 
 /// `File.WriteAllLines`: every line followed by `Environment.NewLine`.

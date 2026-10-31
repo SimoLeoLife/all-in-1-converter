@@ -2,6 +2,7 @@
 //! the frame is laid out, so drawing only reads the state.
 
 use super::*;
+use super::i18n::{t, tf};
 
 enum Action {
     Navigate(Page),
@@ -47,7 +48,7 @@ impl eframe::App for ProApp {
 
         if ctx.input(|i| i.viewport().close_requested()) && self.is_running {
             ctx.send_viewport_cmd(egui::ViewportCommand::CancelClose);
-            self.status_text = "Wait for the active operation to finish before closing".into();
+            self.status_text = t("Wait for the active operation to finish before closing").into();
         }
 
         let mut actions = Vec::new();
@@ -111,17 +112,17 @@ impl ProApp {
             }
             Action::ClearQueue => {
                 self.queue.clear();
-                self.status_text = "Queue cleared".into();
+                self.status_text = t("Queue cleared").into();
             }
             Action::OpenBundle => {
-                if let Some(file) = rfd::FileDialog::new().set_title("Open a .nitro or .hab bundle").add_filter("Bundles", &["nitro", "hab"]).pick_file() {
+                if let Some(file) = rfd::FileDialog::new().set_title(t("Open a .nitro or .hab bundle")).add_filter("Bundles", &["nitro", "hab"]).pick_file() {
                     self.open_preview(ctx, &file);
                 }
             }
             Action::ClosePreview => self.preview = None,
             Action::OpenLog(path) => {
                 if let Err(error) = open_path(&path) {
-                    self.status_text = format!("Could not open {}: {error}", path.display());
+                    self.status_text = tf("Could not open {path}: {error}", &[("path", &path.display().to_string()), ("error", &error.to_string())]);
                 }
             }
             Action::DroppedSwf(kind, extension) => {
@@ -132,7 +133,7 @@ impl ProApp {
             Action::Cancel => {
                 if self.is_running {
                     self.runner.cancel();
-                    self.status_text = "Cancelling…".into();
+                    self.status_text = t("Cancelling…").into();
                 }
             }
             Action::Done => self.clear_log(),
@@ -140,10 +141,10 @@ impl ProApp {
             Action::CopyLog => {
                 let count = self.log.line_count();
                 ctx.copy_text(self.log.text().to_string());
-                self.status_text = if count == 0 { "Nothing to copy".into() } else { format!("Copied {} lines", habbo_core::console::n0(count as i64)) };
+                self.status_text = if count == 0 { t("Nothing to copy").into() } else { tf("Copied {count} lines", &[("count", &habbo_core::console::n0(count as i64))]) };
             }
             Action::Browse => {
-                if let Some(folder) = rfd::FileDialog::new().set_title("Select your nitro-assets folder").pick_folder() {
+                if let Some(folder) = rfd::FileDialog::new().set_title(t("Select your nitro-assets folder")).pick_folder() {
                     self.workspace.root_path = folder.display().to_string();
                 }
             }
@@ -202,7 +203,7 @@ impl ProApp {
                 if let Some(exe) = &self.update.installed {
                     match crate::update::restart(exe, &["--professional"]) {
                         Ok(()) => ctx.send_viewport_cmd(egui::ViewportCommand::Close),
-                        Err(error) => self.status_text = format!("Could not restart: {error}"),
+                        Err(error) => self.status_text = tf("Could not restart: {error}", &[("error", &error.to_string())]),
                     }
                 }
             }
@@ -227,29 +228,29 @@ impl ProApp {
                     ui.painter().rect_filled(rect, 10.0, theme::hex("#5A68EE"));
                     ui.painter().text(rect.center(), egui::Align2::CENTER_CENTER, "📦", egui::FontId::proportional(18.0), Color32::WHITE);
                     ui.vertical(|ui| {
-                        ui.label(RichText::new("All-in-1 Converter").size(15.0).strong().color(Color32::WHITE));
-                        ui.label(RichText::new("Habbo asset workstation").size(11.5).color(Fixed::sidebar_muted()));
+                        ui.label(RichText::new(t("All-in-1 Converter")).size(15.0).strong().color(Color32::WHITE));
+                        ui.label(RichText::new(t("Habbo asset workstation")).size(11.5).color(Fixed::sidebar_muted()));
                     });
                 });
                 ui.add_space(22.0);
 
-                let nav = |ui: &mut egui::Ui, actions: &mut Vec<Action>, icon: &str, label: &str, page: Page| {
-                    if nav_button(ui, icon, label, self.page == page, !self.is_running).clicked() {
+                let nav = |ui: &mut egui::Ui, actions: &mut Vec<Action>, icon: &str, label: &'static str, page: Page| {
+                    if nav_button(ui, icon, t(label), self.page == page, !self.is_running).clicked() {
                         actions.push(Action::Navigate(page));
                     }
                 };
                 nav(ui, actions, "🏠", "Dashboard", Page::Dashboard);
                 nav(ui, actions, "📁", "Asset Workspace", Page::Workspace);
-                sidebar_label(ui, "MODULES");
+                sidebar_label(ui, super::i18n::t("MODULES"));
                 for (category, label, _, icon, _) in MODULES {
                     nav(ui, actions, icon, label, Page::Category(*category));
                 }
-                sidebar_label(ui, "GENERAL");
+                sidebar_label(ui, super::i18n::t("GENERAL"));
                 nav(ui, actions, "⚙", "Settings", Page::Settings);
                 nav(ui, actions, "ℹ", "About", Page::Category(OperationCategory::General));
 
                 ui.with_layout(egui::Layout::bottom_up(egui::Align::Min), |ui| {
-                    if nav_button(ui, "↔", "Switch to classic CLI", false, !self.is_running).clicked() {
+                    if nav_button(ui, "↔", t("Switch to classic CLI"), false, !self.is_running).clicked() {
                         actions.push(Action::OpenSwitch);
                     }
                     ui.add_space(4.0);
@@ -271,13 +272,13 @@ impl ProApp {
                 ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                     self.update_banner(ui, &palette, actions);
                     let (text, back, fore) = if self.is_running {
-                        ("Running", palette.info_back, palette.info_text)
+                        (t("Running"), palette.info_back, palette.info_text)
                     } else if !self.has_finished_run {
-                        ("Ready", palette.hover, palette.muted)
+                        (t("Ready"), palette.hover, palette.muted)
                     } else if self.last_run_succeeded {
-                        ("Completed", palette.success_back, palette.success_text)
+                        (t("Completed"), palette.success_back, palette.success_text)
                     } else {
-                        ("Failed", palette.error_back, palette.error_text)
+                        (t("Failed"), palette.error_back, palette.error_text)
                     };
                     egui::Frame::new().fill(back).corner_radius(14).inner_margin(egui::Margin::symmetric(11, 5)).show(ui, |ui| {
                         ui.horizontal(|ui| {
@@ -299,12 +300,12 @@ impl ProApp {
                     ui.add(egui::Label::new(RichText::new(&self.status_text).size(12.0).color(palette.muted)).truncate());
                     ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                         let workspace = match &workspace_runtime::router().paths {
-                            None => "No asset workspace".to_string(),
-                            Some(paths) => format!("Workspace: {}", paths.root.display()),
+                            None => t("No asset workspace").to_string(),
+                            Some(paths) => tf("Workspace: {path}", &[("path", &paths.root.display().to_string())]),
                         };
                         let hotel = match &self.hotel {
                             Some(hotel) => format!("{} ({})", hotel.name, hotel.language),
-                            None => "Custom hotel URLs".into(),
+                            None => t("Custom hotel URLs").into(),
                         };
                         let text = if self.hotel_known { format!("{hotel}   •   {workspace}") } else { workspace };
                         ui.label(RichText::new(text).size(12.0).color(palette.muted));
@@ -338,8 +339,8 @@ impl ProApp {
                                 ui.painter().text(rect.center(), egui::Align2::CENTER_CENTER, *icon, egui::FontId::proportional(19.0), color);
                                 ui.add_space(12.0);
                                 ui.label(RichText::new(catalog::for_category(*category).len().to_string()).size(28.0).strong());
-                                ui.label(RichText::new(*label).size(14.0).strong());
-                                ui.label(RichText::new(*caption).size(12.0).color(palette.muted));
+                                ui.label(RichText::new(t(label)).size(14.0).strong());
+                                ui.label(RichText::new(t(caption)).size(12.0).color(palette.muted));
                             })
                             .response
                             .interact(egui::Sense::click());
@@ -355,8 +356,8 @@ impl ProApp {
 
                 ui.columns(2, |columns| {
                     card(&mut columns[0], &palette, egui::Margin::same(12), |ui| {
-                        card_heading(ui, &palette, "Quick actions", "Frequently used operations");
-                        for id in ["habbo.all", "tools.swf-furniture-hab", "tools.generate-sql", "database.info"] {
+                        card_heading(ui, &palette, t("Quick actions"), t("Frequently used operations"));
+                        for id in ["habbo.import-new", "habbo.all", "tools.swf-furniture-hab", "tools.generate-sql", "database.info"] {
                             let operation = catalog::get(id);
                             if operation_row(ui, &palette, operation, false, true, true).clicked() {
                                 actions.push(Action::OpenOperation(operation));
@@ -364,12 +365,12 @@ impl ProApp {
                         }
                     });
                     card(&mut columns[1], &palette, egui::Margin::same(12), |ui| {
-                        card_heading(ui, &palette, "Recent activity", "Last runs; click one to open its log");
+                        card_heading(ui, &palette, t("Recent activity"), t("Last runs; click one to open its log"));
                         if self.history.entries.is_empty() {
                             ui.vertical_centered(|ui| {
                                 ui.add_space(18.0);
-                                ui.label(RichText::new("🕓").size(26.0).color(palette.subtle));
-                                ui.label(RichText::new("No operations run yet.").size(12.5).color(palette.muted));
+                                ui.label(RichText::new(t("🕓")).size(26.0).color(palette.subtle));
+                                ui.label(RichText::new(t("No operations run yet.")).size(12.5).color(palette.muted));
                                 ui.add_space(18.0);
                             });
                         }
@@ -385,7 +386,7 @@ impl ProApp {
                                         palette.error_text
                                     };
                                     dot(ui, color);
-                                    ui.label(RichText::new(&run.title).size(13.0));
+                                    ui.label(RichText::new(t(&run.title)).size(13.0));
                                     ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                                         ui.add_space(12.0);
                                         let when = run.finished_local().map_or_else(String::new, |t| {
@@ -420,20 +421,20 @@ impl ProApp {
                             ui.vertical(|ui| {
                                 ui.set_max_width(ui.available_width() - 110.0);
                                 ui.horizontal(|ui| {
-                                    ui.label(RichText::new(self.hotel.map_or("Custom hotel URLs", |h| h.name)).size(14.5).strong());
+                                    ui.label(RichText::new(self.hotel.map_or(t("Custom hotel URLs"), |h| h.name)).size(14.5).strong());
                                     if let Some(hotel) = &self.hotel {
                                         chip(ui, &hotel.language.to_uppercase(), palette.accent_soft, palette.accent_text);
                                     }
                                 });
                                 let text = match &self.hotel {
-                                    Some(hotel) => format!("{}. Habbo Original downloads gamedata from this hotel.", hotel.region),
-                                    None if self.hotel_known => "The gamedata URLs in config.ini point at no single Habbo hotel.".into(),
-                                    None => "config.ini could not be read.".into(),
+                                    Some(hotel) => tf("{region}. Habbo Original downloads gamedata from this hotel.", &[("region", hotel.region)]),
+                                    None if self.hotel_known => t("The gamedata URLs in config.ini point at no single Habbo hotel.").into(),
+                                    None => t("config.ini could not be read.").into(),
                                 };
                                 ui.label(RichText::new(text).size(12.5).color(palette.muted));
                             });
                             ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                                if ui.add(secondary_button("Change")).clicked() {
+                                if ui.add(secondary_button(t("Change"))).clicked() {
                                     actions.push(Action::Navigate(Page::Settings));
                                 }
                             });
@@ -448,15 +449,15 @@ impl ProApp {
                             ui.add_space(8.0);
                             ui.vertical(|ui| {
                                 ui.set_max_width(ui.available_width() - 150.0);
-                                ui.label(RichText::new("Asset workspace").size(14.5).strong());
+                                ui.label(RichText::new(t("Asset workspace")).size(14.5).strong());
                                 let text = match &router.paths {
-                                    None => "Not connected. Operations write to their own output folders next to the converter.".to_string(),
-                                    Some(paths) => format!("Connected to {}. Compatible operations read and write there, with backups.", paths.root.display()),
+                                    None => t("Not connected. Operations write to their own output folders next to the converter.").to_string(),
+                                    Some(paths) => tf("Connected to {path}. Compatible operations read and write there, with backups.", &[("path", &paths.root.display().to_string())]),
                                 };
                                 ui.label(RichText::new(text).size(12.5).color(palette.muted));
                             });
                             ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                                if ui.add(secondary_button(if router.paths.is_none() { "Connect folder" } else { "Manage" })).clicked() {
+                                if ui.add(secondary_button(if router.paths.is_none() { t("Connect folder") } else { t("Manage") })).clicked() {
                                     actions.push(Action::Navigate(Page::Workspace));
                                 }
                             });
@@ -474,8 +475,8 @@ impl ProApp {
         egui::ScrollArea::vertical().auto_shrink([false, false]).show(ui, |ui| {
             page_margin(ui, |ui| {
                 card(ui, &palette, egui::Margin::same(20), |ui| {
-                    ui.label(RichText::new("Nitro assets folder").size(15.0).strong());
-                    ui.label(RichText::new("Choose the nitro-assets root. Known folders are detected automatically.").size(12.5).color(palette.muted));
+                    ui.label(RichText::new(t("Nitro assets folder")).size(15.0).strong());
+                    ui.label(RichText::new(t("Choose the nitro-assets root. Known folders are detected automatically.")).size(12.5).color(palette.muted));
                     ui.add_space(8.0);
                     ui.horizontal(|ui| {
                         let buttons_width = 260.0;
@@ -484,10 +485,10 @@ impl ProApp {
                                 .hint_text(r"E:\Users\you\Nitro-Files\nitro-assets")
                                 .desired_width(ui.available_width() - buttons_width),
                         );
-                        if ui.add(secondary_button("Browse…")).clicked() {
+                        if ui.add(secondary_button(t("Browse…"))).clicked() {
                             actions.push(Action::Browse);
                         }
-                        if ui.add_enabled(self.workspace.busy.is_none(), primary_button("Save and verify")).clicked() {
+                        if ui.add_enabled(self.workspace.busy.is_none(), primary_button(t("Save and verify"))).clicked() {
                             actions.push(Action::SaveWorkspace);
                         }
                     });
@@ -498,7 +499,7 @@ impl ProApp {
 
                 if self.workspace.folders.is_empty() {
                     card(ui, &palette, egui::Margin::symmetric(18, 14), |ui| {
-                        ui.label(RichText::new("No workspace verified yet.").size(13.0).color(palette.muted));
+                        ui.label(RichText::new(t("No workspace verified yet.")).size(13.0).color(palette.muted));
                     });
                 } else {
                     ui.horizontal_wrapped(|ui| {
@@ -506,11 +507,11 @@ impl ProApp {
                             ui.allocate_ui_with_layout(vec2(300.0, 80.0), egui::Layout::top_down(egui::Align::Min), |ui| {
                                 card(ui, &palette, egui::Margin::same(16), |ui| {
                                     ui.horizontal(|ui| {
-                                        ui.label(RichText::new(folder.name).size(14.5).strong());
+                                        ui.label(RichText::new(t(folder.name)).size(14.5).strong());
                                         if folder.exists {
-                                            chip(ui, &format!("{} FILES", habbo_core::console::n0(folder.file_count as i64)), palette.success_back, palette.success_text);
+                                            chip(ui, &tf("{count} FILES", &[("count", &habbo_core::console::n0(folder.file_count as i64))]), palette.success_back, palette.success_text);
                                         } else {
-                                            chip(ui, "MISSING", palette.warning_back, palette.warning_text);
+                                            chip(ui, t("MISSING"), palette.warning_back, palette.warning_text);
                                         }
                                     });
                                     ui.add(egui::Label::new(RichText::new(folder.path.display().to_string()).size(11.5).color(palette.muted)).truncate());
@@ -525,15 +526,15 @@ impl ProApp {
                     ui.horizontal(|ui| {
                         ui.vertical(|ui| {
                             ui.set_max_width(ui.available_width() - 220.0);
-                            ui.label(RichText::new("Safe file interaction").size(14.5).strong());
+                            ui.label(RichText::new(t("Safe file interaction")).size(14.5).strong());
                             ui.label(
-                                RichText::new("Compatible operations use these folders directly. Existing files are backed up under backups/<date-time> before replacement; paths outside this workspace are rejected.")
+                                RichText::new(t("Compatible operations use these folders directly. Existing files are backed up under backups/<date-time> before replacement; paths outside this workspace are rejected."))
                                     .size(12.5)
                                     .color(palette.muted),
                             );
                         });
                         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                            if ui.add_enabled(self.workspace.paths.is_some(), secondary_button("Open workspace folder")).clicked() {
+                            if ui.add_enabled(self.workspace.paths.is_some(), secondary_button(t("Open workspace folder"))).clicked() {
                                 actions.push(Action::OpenWorkspaceFolder);
                             }
                         });
@@ -562,7 +563,7 @@ impl ProApp {
                         ui.add_space(6.0);
                         ui.horizontal(|ui| {
                             ui.add_space(12.0);
-                            ui.label(RichText::new(format!("{} operations", operations.len())).size(12.0).color(palette.muted));
+                            ui.label(RichText::new(tf("{count} operations", &[("count", &operations.len().to_string())])).size(12.0).color(palette.muted));
                         });
                         ui.add_space(6.0);
                         egui::ScrollArea::vertical().id_salt("operations").auto_shrink([false, false]).show(ui, |ui| {
@@ -574,7 +575,7 @@ impl ProApp {
                                         ui.add_space(if group.is_none() { 4.0 } else { 14.0 });
                                         ui.horizontal(|ui| {
                                             ui.add_space(12.0);
-                                            ui.label(RichText::new(next.to_uppercase()).size(10.5).strong().color(palette.subtle));
+                                            ui.label(RichText::new(t(next).to_uppercase()).size(10.5).strong().color(palette.subtle));
                                         });
                                     }
                                 }
@@ -604,39 +605,39 @@ impl ProApp {
     fn operation_detail(&mut self, ui: &mut egui::Ui, palette: &Palette, actions: &mut Vec<Action>) {
         let operation = self.selected;
         ui.horizontal_wrapped(|ui| {
-            ui.label(RichText::new(operation.map_or("Select an operation", |o| o.title)).size(20.0).strong());
+            ui.label(RichText::new(operation.map_or(t("Select an operation"), |o| t(o.title))).size(20.0).strong());
             ui.add_space(10.0);
             if operation.is_some_and(|o| o.is_destructive) {
-                chip(ui, "CAUTION", palette.warning_back, palette.warning_text);
+                chip(ui, t("CAUTION"), palette.warning_back, palette.warning_text);
             }
             if operation.is_some_and(|o| o.requires_input) {
-                chip(ui, "ASKS QUESTIONS", palette.info_back, palette.info_text);
+                chip(ui, t("ASKS QUESTIONS"), palette.info_back, palette.info_text);
             }
         });
-        ui.label(RichText::new(operation.map_or("Choose an operation on the left to run it.", |o| o.description)).size(13.0).color(palette.muted));
+        ui.label(RichText::new(operation.map_or(t("Choose an operation on the left to run it."), |o| t(o.description))).size(13.0).color(palette.muted));
         if let (Some(operation), Some(paths)) = (operation, &workspace_runtime::router().paths) {
             if WORKSPACE_OPERATION_IDS.contains(&operation.id) {
-                ui.label(RichText::new(format!("Uses the asset workspace: {}", paths.root.display())).size(12.0).color(palette.accent_text));
+                ui.label(RichText::new(tf("Uses the asset workspace: {path}", &[("path", &paths.root.display().to_string())])).size(12.0).color(palette.accent_text));
             }
         }
         ui.add_space(10.0);
         ui.horizontal(|ui| {
             let can_run = operation.is_some() && !self.is_running;
-            if ui.add_enabled(can_run, primary_button("▶  Run operation")).clicked() {
+            if ui.add_enabled(can_run, primary_button(t("▶  Run operation"))).clicked() {
                 actions.push(Action::Run);
             }
             if operation.is_some()
                 && ui
-                    .add(secondary_button("+ Add to queue"))
-                    .on_hover_text("Runs after the current operation (or now, when nothing runs)")
+                    .add(secondary_button(t("+ Add to queue")))
+                    .on_hover_text(t("Runs after the current operation (or now, when nothing runs)"))
                     .clicked()
             {
                 actions.push(Action::Queue);
             }
-            if self.is_running && ui.add(secondary_button("⏹  Cancel")).clicked() {
+            if self.is_running && ui.add(secondary_button(t("⏹  Cancel"))).clicked() {
                 actions.push(Action::Cancel);
             }
-            if self.has_finished_run && !self.is_running && ui.add(secondary_button("Done")).clicked() {
+            if self.has_finished_run && !self.is_running && ui.add(secondary_button(t("Done"))).clicked() {
                 actions.push(Action::Done);
             }
         });
@@ -644,14 +645,14 @@ impl ProApp {
         if !self.queue.is_empty() {
             ui.add_space(8.0);
             ui.horizontal_wrapped(|ui| {
-                ui.label(RichText::new(format!("QUEUE ({})", self.queue.len())).size(10.5).strong().color(palette.subtle));
+                ui.label(RichText::new(tf("QUEUE ({count})", &[("count", &self.queue.len().to_string())])).size(10.5).strong().color(palette.subtle));
                 for (index, run) in self.queue.iter().enumerate() {
                     if index > 0 {
-                        ui.label(RichText::new("›").color(palette.subtle));
+                        ui.label(RichText::new(t("›")).color(palette.subtle));
                     }
-                    chip(ui, run.operation.title, palette.info_back, palette.info_text);
+                    chip(ui, t(run.operation.title), palette.info_back, palette.info_text);
                 }
-                if ui.add(egui::Button::new(RichText::new("Clear").size(11.5)).corner_radius(6)).clicked() {
+                if ui.add(egui::Button::new(RichText::new(t("Clear")).size(11.5)).corner_radius(6)).clicked() {
                     actions.push(Action::ClearQueue);
                 }
             });
@@ -681,14 +682,14 @@ impl ProApp {
 
         ui.add_space(14.0);
         ui.horizontal(|ui| {
-            ui.label(RichText::new("OUTPUT").size(10.5).strong().color(palette.subtle));
+            ui.label(RichText::new(t("OUTPUT")).size(10.5).strong().color(palette.subtle));
             ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                if ui.add(egui::Button::new(RichText::new("Copy output").size(12.0)).corner_radius(8)).clicked() {
+                if ui.add(egui::Button::new(RichText::new(t("Copy output")).size(12.0)).corner_radius(8)).clicked() {
                     actions.push(Action::CopyLog);
                 }
                 if ui
-                    .add(egui::Button::new(RichText::new("Open bundle…").size(12.0)).corner_radius(8))
-                    .on_hover_text("Look inside a .nitro or .hab (you can also drop one on the window)")
+                    .add(egui::Button::new(RichText::new(t("Open bundle…")).size(12.0)).corner_radius(8))
+                    .on_hover_text(t("Look inside a .nitro or .hab (you can also drop one on the window)"))
                     .clicked()
                 {
                     actions.push(Action::OpenBundle);
@@ -709,7 +710,7 @@ impl ProApp {
                 ui.set_min_height(log_height - 22.0);
                 ui.set_width(ui.available_width());
                 if self.log.is_empty() {
-                    ui.label(RichText::new("Output appears here when the operation runs.").monospace().size(12.0).color(theme::hex("#6B7890")));
+                    ui.label(RichText::new(t("Output appears here when the operation runs.")).monospace().size(12.0).color(theme::hex("#6B7890")));
                     return;
                 }
                 egui::ScrollArea::vertical()
@@ -730,7 +731,7 @@ impl ProApp {
                 let edit = ui.add_enabled(
                     self.is_running,
                     egui::TextEdit::singleline(&mut self.input_text)
-                        .hint_text("Answer the prompt and press Enter (empty = default)")
+                        .hint_text(t("Answer the prompt and press Enter (empty = default)"))
                         .desired_width(ui.available_width() - 90.0),
                 );
                 if self.focus_input && self.is_running {
@@ -741,7 +742,7 @@ impl ProApp {
                     actions.push(Action::Submit);
                     edit.request_focus();
                 }
-                if ui.add_enabled(self.is_running, secondary_button("Send")).clicked() {
+                if ui.add_enabled(self.is_running, secondary_button(t("Send"))).clicked() {
                     actions.push(Action::Submit);
                 }
             });
@@ -758,27 +759,27 @@ impl ProApp {
         if let Dialog::DroppedSwf(files) = dialog {
             let modal = egui::Modal::new(egui::Id::new("dropped")).show(ctx, |ui| {
                 ui.set_width(470.0);
-                ui.label(RichText::new(format!("Convert {} SWF file(s)", files.len())).size(18.0).strong());
+                ui.label(RichText::new(tf("Convert {count} SWF file(s)", &[("count", &files.len().to_string())])).size(18.0).strong());
                 ui.label(
-                    RichText::new("They are copied into SWFCompiler/import/<kind> and converted from there. What are they?")
+                    RichText::new(t("They are copied into SWFCompiler/import/<kind> and converted from there. What are they?"))
                         .size(13.0)
                         .color(palette.muted),
                 );
                 ui.add_space(10.0);
                 for (kind, label) in [("furniture", "Furniture"), ("clothes", "Clothes"), ("pets", "Pets"), ("effects", "Effects")] {
                     ui.horizontal(|ui| {
-                        ui.add_sized([110.0, 28.0], egui::Label::new(RichText::new(label).strong()));
-                        if ui.add(primary_button("to .hab")).clicked() {
+                        ui.add_sized([110.0, 28.0], egui::Label::new(RichText::new(t(label)).strong()));
+                        if ui.add(primary_button(t("to .hab"))).clicked() {
                             actions.push(Action::DroppedSwf(kind, ".hab"));
                         }
-                        if ui.add(secondary_button("to .nitro")).clicked() {
+                        if ui.add(secondary_button(t("to .nitro"))).clicked() {
                             actions.push(Action::DroppedSwf(kind, ".nitro"));
                         }
                     });
                 }
                 ui.add_space(8.0);
                 ui.with_layout(egui::Layout::right_to_left(egui::Align::Min), |ui| {
-                    if ui.add(secondary_button("Cancel")).clicked() {
+                    if ui.add(secondary_button(t("Cancel"))).clicked() {
                         actions.push(Action::CancelDialog);
                     }
                 });
@@ -802,28 +803,28 @@ impl ProApp {
 
         let (heading, message, note, confirm, icon, fore, back) = match dialog {
             Dialog::Workspace(operation, _) => (
-                operation.title.to_string(),
-                format!("This operation will interact with the configured Nitro workspace:\n{workspace_root}"),
-                "Existing files written by compatible operations are backed up automatically before replacement.",
-                "Continue with workspace",
+                t(operation.title).to_string(),
+                tf("This operation will interact with the configured Nitro workspace:\n{path}", &[("path", &workspace_root)]),
+                t("Existing files written by compatible operations are backed up automatically before replacement."),
+                t("Continue with workspace"),
                 "📁",
                 palette.accent_text,
                 palette.accent_soft,
             ),
             Dialog::Destructive(operation, _) => (
-                "Database change".to_string(),
-                format!("{} can modify your database.", operation.title),
-                "Confirm only if your configuration and backups are ready.",
-                "Confirm and run",
+                t("Database change").to_string(),
+                tf("{operation} can modify your database.", &[("operation", t(operation.title))]),
+                t("Confirm only if your configuration and backups are ready."),
+                t("Confirm and run"),
                 "⚠",
                 palette.warning_text,
                 palette.warning_back,
             ),
             Dialog::LeaveSettings(_) => (
-                "Unsaved changes".to_string(),
-                "Your config.ini changes are not saved yet.".to_string(),
-                "Discard them, or cancel and press Save changes.",
-                "Discard changes",
+                t("Unsaved changes").to_string(),
+                t("Your config.ini changes are not saved yet.").to_string(),
+                t("Discard them, or cancel and press Save changes."),
+                t("Discard changes"),
                 "⚠",
                 palette.warning_text,
                 palette.warning_back,
@@ -847,7 +848,7 @@ impl ProApp {
                         if ui.add(primary_button(confirm)).clicked() {
                             actions.push(Action::ConfirmDialog);
                         }
-                        if ui.add(secondary_button("Cancel")).clicked() {
+                        if ui.add(secondary_button(t("Cancel"))).clicked() {
                             actions.push(Action::CancelDialog);
                         }
                     });
@@ -872,11 +873,11 @@ impl ProApp {
             let (rect, _) = ui.allocate_exact_size(vec2(30.0, 30.0), egui::Sense::hover());
             ui.painter().rect_filled(rect, 8.0, Fixed::brand());
             ui.painter().text(rect.center(), egui::Align2::CENTER_CENTER, "📦", egui::FontId::proportional(15.0), Color32::WHITE);
-            ui.label(RichText::new("All-in-1 Converter").size(14.0).strong().color(palette.muted));
+            ui.label(RichText::new(t("All-in-1 Converter")).size(14.0).strong().color(palette.muted));
         });
         ui.add_space(22.0);
-        ui.label(RichText::new("Choose your workspace").size(28.0).strong());
-        ui.label(RichText::new("Both interfaces use the same converter functions and configuration.").size(14.0).color(palette.muted));
+        ui.label(RichText::new(t("Choose your workspace")).size(28.0).strong());
+        ui.label(RichText::new(t("Both interfaces use the same converter functions and configuration.")).size(14.0).color(palette.muted));
         ui.add_space(24.0);
 
         ui.columns(2, |columns| {
@@ -899,15 +900,15 @@ impl ProApp {
                             ui.painter().text(rect.center(), egui::Align2::CENTER_CENTER, icon, egui::FontId::proportional(20.0), palette.accent_text);
                             if recommended {
                                 ui.with_layout(egui::Layout::right_to_left(egui::Align::Min), |ui| {
-                                    chip(ui, "RECOMMENDED", palette.accent_soft, palette.accent_text);
+                                    chip(ui, t("RECOMMENDED"), palette.accent_soft, palette.accent_text);
                                 });
                             }
                         });
                         ui.add_space(6.0);
-                        ui.label(RichText::new(title).size(18.0).strong());
-                        ui.label(RichText::new(description).size(13.0).color(palette.muted));
+                        ui.label(RichText::new(t(title)).size(18.0).strong());
+                        ui.label(RichText::new(t(description)).size(13.0).color(palette.muted));
                         ui.add_space(8.0);
-                        ui.label(RichText::new("Open ›").size(13.0).strong().color(palette.accent_text));
+                        ui.label(RichText::new(t("Open ›")).size(13.0).strong().color(palette.accent_text));
                     })
                     .response
                     .interact(egui::Sense::click());
@@ -922,9 +923,9 @@ impl ProApp {
 
         ui.add_space(20.0);
         ui.horizontal(|ui| {
-            ui.label(RichText::new("You can switch later from the sidebar, or with 's' in the CLI menu.").size(12.0).color(palette.muted));
+            ui.label(RichText::new(t("You can switch later from the sidebar, or with 's' in the CLI menu.")).size(12.0).color(palette.muted));
             ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                let label = if self.selector { "Exit" } else { "Cancel" };
+                let label = if self.selector { t("Exit") } else { t("Cancel") };
                 if ui.add(secondary_button(label)).clicked() {
                     actions.push(Action::ChooseMode(RunMode::Quit));
                 }
@@ -989,13 +990,13 @@ fn operation_row(ui: &mut egui::Ui, palette: &Palette, operation: &OperationDefi
             ui.vertical(|ui| {
                 ui.set_max_width(ui.available_width() - if chevron { 24.0 } else { 0.0 });
                 ui.horizontal(|ui| {
-                    ui.label(RichText::new(operation.title).size(13.5).strong());
+                    ui.label(RichText::new(t(operation.title)).size(13.5).strong());
                     if operation.is_destructive {
-                        chip(ui, "CAUTION", palette.warning_back, palette.warning_text);
+                        chip(ui, t("CAUTION"), palette.warning_back, palette.warning_text);
                     }
                 });
                 let mut job = egui::text::LayoutJob::single_section(
-                    operation.description.to_string(),
+                    t(operation.description).to_string(),
                     egui::TextFormat { font_id: egui::FontId::proportional(12.0), color: palette.muted, ..Default::default() },
                 );
                 job.wrap = egui::text::TextWrapping { max_rows: 2, break_anywhere: false, overflow_character: Some('…'), max_width: ui.available_width() };
@@ -1003,7 +1004,7 @@ fn operation_row(ui: &mut egui::Ui, palette: &Palette, operation: &OperationDefi
             });
             if chevron {
                 ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                    ui.label(RichText::new("›").size(18.0).color(palette.subtle));
+                    ui.label(RichText::new(t("›")).size(18.0).color(palette.subtle));
                 });
             }
         });
@@ -1065,7 +1066,7 @@ impl ProApp {
         } else if !swfs.is_empty() {
             self.dialog = Some(Dialog::DroppedSwf(swfs));
         } else {
-            self.status_text = "Drop .swf files to convert them, or a .nitro / .hab to look inside".into();
+            self.status_text = t("Drop .swf files to convert them, or a .nitro / .hab to look inside").into();
         }
     }
 
@@ -1078,7 +1079,7 @@ impl ProApp {
             painter.text(
                 screen.center(),
                 egui::Align2::CENTER_CENTER,
-                "Drop .swf files to convert them, or a .nitro / .hab to look inside",
+                t("Drop .swf files to convert them, or a .nitro / .hab to look inside"),
                 egui::FontId::proportional(20.0),
                 Color32::WHITE,
             );
@@ -1087,7 +1088,7 @@ impl ProApp {
         let Some(preview) = &self.preview else { return };
         let palette = Palette::current(ctx);
         let mut open = true;
-        egui::Window::new(format!("Bundle: {}", preview.name()))
+        egui::Window::new(tf("Bundle: {name}", &[("name", &preview.name())]))
             .id(egui::Id::new("bundle-preview"))
             .open(&mut open)
             .default_size([820.0, 620.0])
@@ -1102,7 +1103,7 @@ impl ProApp {
                 });
                 ui.add_space(8.0);
                 ui.columns(2, |columns| {
-                    columns[0].label(RichText::new("SHEET").size(10.5).strong().color(palette.subtle));
+                    columns[0].label(RichText::new(t("SHEET")).size(10.5).strong().color(palette.subtle));
                     match &preview.sheet {
                         Some((texture, size, name)) => {
                             columns[0].label(RichText::new(format!("{name}: {} × {} px", size[0], size[1])).size(12.0).color(palette.muted));
@@ -1114,10 +1115,10 @@ impl ProApp {
                             });
                         }
                         None => {
-                            columns[0].label(RichText::new("No sheet in this bundle.").color(palette.muted));
+                            columns[0].label(RichText::new(t("No sheet in this bundle.")).color(palette.muted));
                         }
                     }
-                    columns[1].label(RichText::new("JSON").size(10.5).strong().color(palette.subtle));
+                    columns[1].label(RichText::new(t("JSON")).size(10.5).strong().color(palette.subtle));
                     egui::ScrollArea::both().id_salt("preview-json").max_height(500.0).show(&mut columns[1], |ui| {
                         // A read-only editor keeps the json indentation (a label would trim it).
                         let mut json = preview.json.as_str();
@@ -1146,15 +1147,15 @@ impl ProApp {
     /// Drawn right-to-left, before the status pill.
     fn update_banner(&self, ui: &mut egui::Ui, palette: &Palette, actions: &mut Vec<Action>) {
         if self.update.installed.is_some() {
-            if ui.add(primary_button("Restart to update")).clicked() {
+            if ui.add(primary_button(t("Restart to update"))).clicked() {
                 actions.push(Action::RestartUpdated);
             }
-            ui.label(RichText::new("Update installed.").size(12.0).color(palette.success_text));
+            ui.label(RichText::new(t("Update installed.")).size(12.0).color(palette.success_text));
         } else if self.update.installing.is_some() {
             ui.spinner();
-            ui.label(RichText::new("Downloading the update…").size(12.0).color(palette.muted));
+            ui.label(RichText::new(t("Downloading the update…")).size(12.0).color(palette.muted));
         } else if let Some(release) = &self.update.available {
-            if ui.add_enabled(!self.is_running, primary_button(&format!("Update to {}", release.version))).on_hover_text(&release.notes).clicked() {
+            if ui.add_enabled(!self.is_running, primary_button(&tf("Update to {version}", &[("version", &release.version)]))).on_hover_text(&release.notes).clicked() {
                 actions.push(Action::InstallUpdate);
             }
             if let Some(error) = &self.update.error {

@@ -1,0 +1,25 @@
+[package]
+name = "habbo-golden"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish = false
+
+# Not under src/bin: the repository .gitignore ignores every bin/ folder.
+[[bin]]
+name = "golden-import"
+path = "src/golden_import.rs"
+
+[dependencies]
+habbo-core.workspace = true
+habbo-nitro.workspace = true
+anyhow.workspace = true
+image.workspace = true
+serde_json.workspace = true
+
+[dev-dependencies]
+habbo-furni = { path = "../furni" }
+habbo-figure = { path = "../figure" }
+habbo-db.workspace = true
+tokio.workspace = true
+tempfile.workspace = true

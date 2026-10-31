@@ -1,0 +1,389 @@
+{
+  "name": "roomdimmer",
+  "logicType": "furniture_roomdimmer",
+  "visualizationType": "furniture_animated",
+  "assets": {
+    "roomdimmer_64_a_2_1": {
+      "x": 18,
+      "y": 24
+    },
+    "roomdimmer_64_a_2_2": {
+      "x": 18,
+      "y": 24
+    },
+    "roomdimmer_64_b_2_1": {
+      "x": 20,
+      "y": 25
+    },
+    "roomdimmer_64_a_4_1": {
+      "source": "roomdimmer_64_a_2_1",
+      "x": 18,
+      "y": 24,
+      "flipH": true
+    },
+    "roomdimmer_64_a_4_2": {
+      "source": "roomdimmer_64_a_2_2",
+      "x": 18,
+      "y": 24,
+      "flipH": true
+    },
+    "roomdimmer_64_b_4_1": {
+      "source": "roomdimmer_64_b_2_1",
+      "x": 20,
+      "y": 25,
+      "flipH": true
+    },
+    "roomdimmer_icon_a": {
+      "source": "roomdimmer_32_a_2_2",
+      "x": 10,
+      "y": 14
+    },
+    "roomdimmer_32_a_2_1": {
+      "x": 9,
+      "y": 14
+    },
+    "roomdimmer_32_a_2_2": {
+      "x": 9,
+      "y": 14
+    },
+    "roomdimmer_32_b_2_1": {
+      "x": 10,
+      "y": 15
+    },
+    "roomdimmer_32_a_4_1": {
+      "source": "roomdimmer_32_a_2_1",
+      "x": 9,
+      "y": 14,
+      "flipH": true
+    },
+    "roomdimmer_32_a_4_2": {
+      "source": "roomdimmer_32_a_2_2",
+      "x": 9,
+      "y": 14,
+      "flipH": true
+    },
+    "roomdimmer_32_b_4_1": {
+      "source": "roomdimmer_32_b_2_1",
+      "x": 10,
+      "y": 15,
+      "flipH": true
+    }
+  },
+  "logic": {
+    "model": {
+      "dimensions": {
+        "x": 1.0938,
+        "y": 0.2,
+        "z": 1.125
+      },
+      "directions": [
+        90,
+        180
+      ]
+    }
+  },
+  "visualizations": [
+    {
+      "angle": 45,
+      "layerCount": 2,
+      "size": 32,
+      "layers": {
+        "0": {
+          "z": -2995
+        },
+        "1": {
+          "alpha": 51,
+          "z": -3000
+        }
+      },
+      "directions": {
+        "2": {
+          "layers": {}
+        },
+        "4": {
+          "layers": {}
+        }
+      },
+      "animations": {
+        "0": {
+          "layers": {
+            "0": {
+              "frameSequences": {
+                "0": {
+                  "frames": {
+                    "0": {
+                      "id": 1
+                    }
+                  }
+                }
+              }
+            },
+            "1": {
+              "frameSequences": {
+                "0": {
+                  "frames": {
+                    "0": {
+                      "id": 1
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "1": {
+          "layers": {
+            "0": {
+              "frameSequences": {
+                "0": {
+                  "frames": {
+                    "0": {
+                      "id": 2
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "colors": {}
+    },
+    {
+      "angle": 45,
+      "layerCount": 2,
+      "size": 64,
+      "layers": {
+        "0": {
+          "z": -2995
+        },
+        "1": {
+          "alpha": 51,
+          "z": -3000
+        }
+      },
+      "directions": {
+        "2": {
+          "layers": {}
+        },
+        "4": {
+          "layers": {}
+        }
+      },
+      "animations": {
+        "0": {
+          "layers": {
+            "0": {
+              "frameSequences": {
+                "0": {
+                  "frames": {
+                    "0": {
+                      "id": 1
+                    }
+                  }
+                }
+              }
+            },
+            "1": {
+              "frameSequences": {
+                "0": {
+                  "frames": {
+                    "0": {
+                      "id": 1
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "1": {
+          "layers": {
+            "0": {
+              "frameSequences": {
+                "0": {
+                  "frames": {
+                    "0": {
+                      "id": 2
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "colors": {}
+    },
+    {
+      "angle": 360,
+      "layerCount": 1,
+      "size": 1,
+      "layers": {},
+      "directions": {
+        "0": {
+          "layers": {}
+        }
+      },
+      "colors": {}
+    }
+  ],
+  "spritesheet": {
+    "frames": {
+      "roomdimmer_roomdimmer_32_a_2_1": {
+        "frame": {
+          "x": 2,
+          "y": 2,
+          "w": 20,
+          "h": 26
+        },
+        "rotated": false,
+        "trimmed": false,
+        "spriteSourceSize": {
+          "x": 0,
+          "y": 0,
+          "w": 20,
+          "h": 26
+        },
+        "sourceSize": {
+          "w": 20,
+          "h": 26
+        },
+        "pivot": {
+          "x": 0.5,
+          "y": 0.5
+        }
+      },
+      "roomdimmer_roomdimmer_32_a_2_2": {
+        "frame": {
+          "x": 2,
+          "y": 30,
+          "w": 20,
+          "h": 26
+        },
+        "rotated": false,
+        "trimmed": false,
+        "spriteSourceSize": {
+          "x": 0,
+          "y": 0,
+          "w": 20,
+          "h": 26
+        },
+        "sourceSize": {
+          "w": 20,
+          "h": 26
+        },
+        "pivot": {
+          "x": 0.5,
+          "y": 0.5
+        }
+      },
+      "roomdimmer_roomdimmer_32_b_2_1": {
+        "frame": {
+          "x": 2,
+          "y": 58,
+          "w": 20,
+          "h": 26
+        },
+        "rotated": false,
+        "trimmed": false,
+        "spriteSourceSize": {
+          "x": 0,
+          "y": 0,
+          "w": 20,
+          "h": 26
+        },
+        "sourceSize": {
+          "w": 20,
+          "h": 26
+        },
+        "pivot": {
+          "x": 0.5,
+          "y": 0.5
+        }
+      },
+      "roomdimmer_roomdimmer_64_a_2_1": {
+        "frame": {
+          "x": 2,
+          "y": 86,
+          "w": 35,
+          "h": 47
+        },
+        "rotated": false,
+        "trimmed": false,
+        "spriteSourceSize": {
+          "x": 0,
+          "y": 0,
+          "w": 35,
+          "h": 47
+        },
+        "sourceSize": {
+          "w": 35,
+          "h": 47
+        },
+        "pivot": {
+          "x": 0.5,
+          "y": 0.5
+        }
+      },
+      "roomdimmer_roomdimmer_64_a_2_2": {
+        "frame": {
+          "x": 2,
+          "y": 135,
+          "w": 35,
+          "h": 47
+        },
+        "rotated": false,
+        "trimmed": false,
+        "spriteSourceSize": {
+          "x": 0,
+          "y": 0,
+          "w": 35,
+          "h": 47
+        },
+        "sourceSize": {
+          "w": 35,
+          "h": 47
+        },
+        "pivot": {
+          "x": 0.5,
+          "y": 0.5
+        }
+      },
+      "roomdimmer_roomdimmer_64_b_2_1": {
+        "frame": {
+          "x": 2,
+          "y": 184,
+          "w": 33,
+          "h": 50
+        },
+        "rotated": false,
+        "trimmed": false,
+        "spriteSourceSize": {
+          "x": 0,
+          "y": 0,
+          "w": 33,
+          "h": 50
+        },
+        "sourceSize": {
+          "w": 33,
+          "h": 50
+        },
+        "pivot": {
+          "x": 0.5,
+          "y": 0.5
+        }
+      }
+    },
+    "meta": {
+      "image": "roomdimmer.webp",
+      "format": "RGBA8888",
+      "size": {
+        "w": 39,
+        "h": 236
+      },
+      "scale": 1,
+      "converter": "All-in-1-download-tool"
+    }
+  }
+}

@@ -4,6 +4,7 @@ use eframe::egui::{self, Color32, RichText};
 use habbo_core::config::ConfigIniFile;
 use habbo_core::hotels::{self, HabboHotel};
 
+use super::i18n::{t, tf};
 use super::theme::Palette;
 use super::widgets::{card, chip, heading, label_block};
 
@@ -143,26 +144,26 @@ impl SettingsPage {
 
     fn set_dirty(&mut self, dirty: bool) {
         self.dirty = dirty;
-        if !dirty && self.result.0 == "Unsaved changes." {
+        if !dirty && self.result.0 == t("Unsaved changes.") {
             self.result.0.clear();
         }
     }
 
     fn changed(&mut self) {
         self.set_dirty(true);
-        self.result = ("Unsaved changes.".into(), Tone::Warning);
+        self.result = (t("Unsaved changes.").into(), Tone::Warning);
     }
 
     /// Validates and writes only the changed values. Returns the status-bar message on success.
     pub fn save(&mut self) -> Option<String> {
         if !self.validate() {
-            self.result = ("Fix the highlighted fields first.".into(), Tone::Error);
+            self.result = (t("Fix the highlighted fields first.").into(), Tone::Error);
             return None;
         }
         let file = match ConfigIniFile::load(None) {
             Ok(file) => file,
             Err(error) => {
-                self.result = (format!("Could not save config.ini: {error}"), Tone::Error);
+                self.result = (tf("Could not save config.ini: {error}", &[("error", &error.to_string())]), Tone::Error);
                 return None;
             }
         };
@@ -197,22 +198,18 @@ impl SettingsPage {
         })();
 
         if let Err(error) = outcome {
-            self.result = (format!("Could not save config.ini: {error}"), Tone::Error);
+            self.result = (tf("Could not save config.ini: {error}", &[("error", &error.to_string())]), Tone::Error);
             return None;
         }
         if changed.is_empty() {
-            self.result = ("Nothing to save.".into(), Tone::Muted);
+            self.result = (t("Nothing to save.").into(), Tone::Muted);
             self.set_dirty(false);
-            return Some("Nothing to save.".into());
+            return Some(t("Nothing to save.").into());
         }
 
         habbo_core::settings::reload();
         self.reload();
-        let message = format!(
-            "Saved {} setting{}. The previous file is kept as config.ini.bak.",
-            changed.len(),
-            if changed.len() == 1 { "" } else { "s" }
-        );
+        let message = tf("Saved {count} setting(s). The previous file is kept as config.ini.bak.", &[("count", &changed.len().to_string())]);
         self.result = (message.clone(), Tone::Success);
         Some(message)
     }
@@ -222,11 +219,11 @@ impl SettingsPage {
         for (index, f) in all_fields().enumerate() {
             let value = self.values[index].trim();
             let message = if value.contains(['\r', '\n']) {
-                Some("Must be on one line.")
+                Some(t("Must be on one line."))
             } else {
                 match f.kind {
-                    Kind::Url if !value.is_empty() && !is_http_url(value) => Some("Enter a full http:// or https:// address."),
-                    Kind::Port if !value.parse::<u32>().is_ok_and(|p| (1..=65535).contains(&p)) => Some("Enter a port between 1 and 65535."),
+                    Kind::Url if !value.is_empty() && !is_http_url(value) => Some(t("Enter a full http:// or https:// address.")),
+                    Kind::Port if !value.parse::<u32>().is_ok_and(|p| (1..=65535).contains(&p)) => Some(t("Enter a port between 1 and 65535.")),
                     _ => None,
                 }
             };
@@ -245,9 +242,9 @@ impl SettingsPage {
         card(ui, &palette, egui::Margin::symmetric(20, 16), |ui| {
             ui.horizontal(|ui| {
                 ui.vertical(|ui| {
-                    ui.label(RichText::new("config.ini").size(14.5).strong());
+                    ui.label(RichText::new(t("config.ini")).size(14.5).strong());
                     let path = ConfigIniFile::default_path();
-                    let text = if path.is_file() { path.display().to_string() } else { format!("{} (not found; saving creates it)", path.display()) };
+                    let text = if path.is_file() { path.display().to_string() } else { tf("{path} (not found; saving creates it)", &[("path", &path.display().to_string())]) };
                     ui.label(RichText::new(text).size(12.0).color(palette.muted));
                     if !self.result.0.is_empty() {
                         let color = tone_color(&palette, self.result.1);
@@ -255,25 +252,26 @@ impl SettingsPage {
                     }
                 });
                 ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                    if ui.add_enabled(self.dirty, super::widgets::primary_button("Save changes")).clicked() {
+                    if ui.add_enabled(self.dirty, super::widgets::primary_button(t("Save changes"))).clicked() {
                         status = self.save();
                     }
-                    if ui.add(super::widgets::secondary_button("Reload")).clicked() {
+                    if ui.add(super::widgets::secondary_button(t("Reload"))).clicked() {
                         self.reload();
-                        self.result = ("Reloaded from disk.".into(), Tone::Muted);
+                        self.result = (t("Reloaded from disk.").into(), Tone::Muted);
                     }
-                    if ui.add(super::widgets::secondary_button("Open file")).clicked() {
+                    if ui.add(super::widgets::secondary_button(t("Open file"))).clicked() {
                         let path = ConfigIniFile::default_path();
                         if !path.is_file() {
-                            self.result = ("config.ini does not exist yet; save first.".into(), Tone::Error);
+                            self.result = (t("config.ini does not exist yet; save first.").into(), Tone::Error);
                         } else if let Err(error) = super::open_path(&path) {
-                            self.result = (format!("Could not open the file: {error}"), Tone::Error);
+                            self.result = (tf("Could not open the file: {error}", &[("error", &error.to_string())]), Tone::Error);
                         }
                     }
                 });
             });
         });
 
+        self.language_card(ui, &palette);
         self.hotel_card(ui, &palette);
 
         let mut offset = 0;
@@ -289,15 +287,47 @@ impl SettingsPage {
         status
     }
 
+    /// The window language: applied and saved to config.ini (`language`) right away.
+    fn language_card(&mut self, ui: &mut egui::Ui, palette: &Palette) {
+        card(ui, palette, egui::Margin::same(20), |ui| {
+            ui.horizontal(|ui| {
+                fixed_column(ui, 240.0, |ui| {
+                    label_block(ui, palette, t("Language"), t("Window language; operation output stays in English"))
+                });
+                let current = super::i18n::current();
+                let mut chosen = current.code;
+                egui::ComboBox::from_id_salt("language").width(300.0).selected_text(current.native_name).show_ui(ui, |ui| {
+                    for lang in super::i18n::LANGUAGES {
+                        ui.horizontal(|ui| {
+                            let hotel = hotels::ALL.iter().find(|h| h.domain == lang.hotel_domain);
+                            super::flags::flag(ui, hotel, 24.0);
+                            ui.selectable_value(&mut chosen, lang.code, lang.native_name);
+                        });
+                    }
+                });
+                if chosen != current.code {
+                    super::i18n::set(chosen);
+                    let saved = ConfigIniFile::load(None).and_then(|mut file| {
+                        file.set("language", chosen)?;
+                        file.save()
+                    });
+                    if let Err(error) = saved {
+                        self.result = (tf("Could not save config.ini: {error}", &[("error", &error.to_string())]), Tone::Error);
+                    }
+                }
+            });
+        });
+    }
+
     fn hotel_card(&mut self, ui: &mut egui::Ui, palette: &Palette) {
         card(ui, palette, egui::Margin::same(20), |ui| {
-            heading(ui, palette, "Habbo hotel", "Where Habbo Original downloads gamedata (furnidata, productdata, texts and variables) from");
+            heading(ui, palette, t("Habbo hotel"), t("Where Habbo Original downloads gamedata (furnidata, productdata, texts and variables) from"));
             ui.add_space(8.0);
             ui.horizontal(|ui| {
-                fixed_column(ui, 240.0, |ui| label_block(ui, palette, "Hotel", "Sets the five gamedata URLs below"));
+                fixed_column(ui, 240.0, |ui| label_block(ui, palette, t("Hotel"), t("Sets the five gamedata URLs below")));
                 let selected_text = match &self.hotel {
                     Some(hotel) => hotel.to_string(),
-                    None => "Custom URLs (keep the current ones)".to_string(),
+                    None => t("Custom URLs (keep the current ones)").to_string(),
                 };
                 let before = self.hotel;
                 egui::ComboBox::from_id_salt("hotel")
@@ -305,7 +335,7 @@ impl SettingsPage {
                     .selected_text(selected_text)
                     .show_ui(ui, |ui| {
                         if self.detected_hotel.is_none() {
-                            ui.selectable_value(&mut self.hotel, None, "Custom URLs (keep the current ones)");
+                            ui.selectable_value(&mut self.hotel, None, t("Custom URLs (keep the current ones)"));
                         }
                         for hotel in hotels::ALL {
                             ui.horizontal(|ui| {
@@ -337,8 +367,8 @@ impl SettingsPage {
             });
             ui.add_space(6.0);
             ui.horizontal(|ui| {
-                chip(ui, "NOTE", palette.warning_back, palette.warning_text);
-                ui.label(RichText::new("Item IDs and offer_id values are not the same across hotels.").size(12.5).color(palette.muted));
+                chip(ui, t("NOTE"), palette.warning_back, palette.warning_text);
+                ui.label(RichText::new(t("Item IDs and offer_id values are not the same across hotels.")).size(12.5).color(palette.muted));
             });
         });
     }
@@ -348,9 +378,9 @@ impl SettingsPage {
         card(ui, palette, egui::Margin::same(20), |ui| {
             if collapsible {
                 ui.horizontal(|ui| {
-                    heading(ui, palette, title, subtitle);
+                    heading(ui, palette, t(title), t(subtitle));
                     ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                        if ui.add(super::widgets::secondary_button(if self.cdn_open { "Hide" } else { "Show" })).clicked() {
+                        if ui.add(super::widgets::secondary_button(if self.cdn_open { t("Hide") } else { t("Show") })).clicked() {
                             self.cdn_open = !self.cdn_open;
                         }
                     });
@@ -359,21 +389,21 @@ impl SettingsPage {
                     return;
                 }
             } else {
-                heading(ui, palette, title, subtitle);
+                heading(ui, palette, t(title), t(subtitle));
             }
             ui.add_space(8.0);
             for (i, f) in fields.iter().enumerate() {
                 let index = offset + i;
                 ui.horizontal(|ui| {
-                    fixed_column(ui, 240.0, |ui| label_block(ui, palette, f.label, f.hint));
+                    fixed_column(ui, 240.0, |ui| label_block(ui, palette, t(f.label), t(f.hint)));
                     ui.vertical(|ui| {
                         let changed = match f.kind {
                             Kind::Choice(choices) => {
                                 let mut value = self.values[index].clone();
-                                let selected = choices.iter().find(|(v, _)| *v == value).map_or(choices[0].1, |(_, l)| *l);
+                                let selected = choices.iter().find(|(v, _)| *v == value).map_or(t(choices[0].1), |(_, l)| t(l));
                                 egui::ComboBox::from_id_salt(f.key).width(300.0).selected_text(selected).show_ui(ui, |ui| {
                                     for (v, l) in choices {
-                                        ui.selectable_value(&mut value, v.to_string(), *l);
+                                        ui.selectable_value(&mut value, v.to_string(), t(l));
                                     }
                                 });
                                 let changed = value != self.values[index];
@@ -415,7 +445,7 @@ impl SettingsPage {
         ui.horizontal(|ui| {
             fixed_column(ui, 240.0, |_| {});
             let testing = self.test.is_some();
-            if ui.add_enabled(!testing, super::widgets::secondary_button("Test connection")).clicked() {
+            if ui.add_enabled(!testing, super::widgets::secondary_button(t("Test connection"))).clicked() {
                 let value = |key: &str| {
                     all_fields().position(|f| f.key == key).map(|i| self.values[i].trim().to_string()).unwrap_or_default()
                 };
@@ -431,7 +461,7 @@ impl SettingsPage {
             }
             if testing {
                 ui.spinner();
-                ui.label(RichText::new("Connecting…").size(12.5).color(palette.muted));
+                ui.label(RichText::new(t("Connecting…")).size(12.5).color(palette.muted));
             } else if let Some(result) = &self.test_result {
                 let (text, color) = match result {
                     Ok(text) => (format!("✅ {text}"), palette.success_text),

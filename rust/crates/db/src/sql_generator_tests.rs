@@ -164,3 +164,36 @@ fn legacy_folder_moves_once() {
     move_legacy_furniture_folder(dir.path()).unwrap();
     assert!(dir.path().join("Furniture").join("y.swf").is_file());
 }
+
+#[tokio::test]
+async fn only_filter_keeps_wanted_classnames_and_variants_of_skipped_bases() {
+    let dir = tempfile::tempdir().unwrap();
+    let furniture_dir = dir.path().join("default_furniture");
+    std::fs::create_dir_all(&furniture_dir).unwrap();
+    let chair_json = json!({ "name": "sqlonly_chair", "logic": { "model": { "dimensions": { "x": 2, "y": 1, "z": 0.5 } } } });
+    let hab = habbo_nitro::hab::write("sqlonly_chair", &[("sqlonly_chair.json".into(), serde_json::to_vec(&chair_json).unwrap())]).unwrap();
+    std::fs::write(furniture_dir.join("sqlonly_chair.hab"), hab).unwrap();
+
+    // Its own furni name: the extraction folder in the system temp is per file name.
+    let data = json!({
+        "roomitemtypes": { "furnitype": [
+            { "id": 100, "classname": "sqlonly_chair", "cansiton": true },
+            { "id": 101, "classname": "sqlonly_chair*1" },
+            { "classname": "sqlonly_chair*2" }
+        ]},
+        "wallitemtypes": { "furnitype": [] }
+    });
+    let mut generator = Generator::new(&data, FurnitureSqlTarget::Standard, 50, 3).unwrap();
+    set_bundle_extract_dir(&mut generator, dir.path().join("extracted"));
+    let only: HashSet<String> = ["SQLONLY_CHAIR*2".to_string()].into();
+    generator.set_only(Some(&only));
+    generator.process(&furniture_dir).await.unwrap();
+
+    // The base row is skipped (and uses no id); its variant still gets the base dimensions.
+    assert_eq!(
+        generator.items_base_sql,
+        vec![format!("{ITEMS}(51, 50, 'sqlonly_chair*2', 'sqlonly_chair*2', 2, 1, 0.5, '0', '0', '0', '0', '1', '1', '0', '1', '1', 's', 'default', 1, '0', '0', '0', 0, 0, '0');")]
+    );
+    assert_eq!(generator.catalog_items_sql, vec![format!("{CATALOG}(51, '51', 3, -1, 0, 99, 'sqlonly_chair*2', 5, 0, 0, 1, 0, 0, '', '1', '0');")]);
+    assert_eq!(generator.start_id, 52);
+}

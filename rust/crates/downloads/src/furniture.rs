@@ -107,11 +107,21 @@ pub async fn download_furniture() -> Result<()> {
     let libraries = furniture_libraries(&entries, &furniture_url);
     let counts = asset_downloader::download_libraries(HabboAssetFolder::FURNITURE, libraries).await?;
 
+    let icon_count = download_icons(&entries, &furniture_url).await?;
+
+    log(Color::Green, "Downloading furniture completed!");
+    log(Color::Green, &asset_downloader::summary(&format!("furniture files and {icon_count} new icons"), &counts));
+    Ok(())
+}
+
+/// The icons (`<icon name>_icon.png`) of these (classname, revision) entries that are not in
+/// Habbo_Default/hof_furni/icons yet, config.ini `download_parallelism` at a time. Returns how
+/// many were downloaded. The folder must exist.
+pub async fn download_icons(entries: &[(String, i32)], furniture_url: &str) -> Result<usize> {
     let icon_count = AtomicUsize::new(0);
     futures::stream::iter(entries.iter().map(Ok::<_, anyhow::Error>))
         .try_for_each_concurrent(common::download_parallelism(), |(classname, revision)| {
             let icon_count = &icon_count;
-            let furniture_url = &furniture_url;
             async move {
                 let icon_name = icon_name(classname);
                 let icon_path = Path::new(&hof_furni::icons()).join(format!("{icon_name}_icon.png"));
@@ -131,13 +141,7 @@ pub async fn download_furniture() -> Result<()> {
             }
         })
         .await?;
-
-    log(Color::Green, "Downloading furniture completed!");
-    log(
-        Color::Green,
-        &asset_downloader::summary(&format!("furniture files and {} new icons", icon_count.load(Ordering::SeqCst)), &counts),
-    );
-    Ok(())
+    Ok(icon_count.load(Ordering::SeqCst))
 }
 
 #[cfg(test)]

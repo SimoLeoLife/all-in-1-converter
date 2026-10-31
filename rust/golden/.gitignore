@@ -1,0 +1,2 @@
+# The repository ignores *.swf; the golden inputs must be committed.
+!*.swf

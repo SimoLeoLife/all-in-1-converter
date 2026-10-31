@@ -147,6 +147,12 @@ Put the zip, the app.asar, that .hab or a folder of fx_icon_<type> PNGs in Habbo
 of one of them (for example a mirror). Output: Habbo_Default/fx_icons/fx_icon_<type>.png,\n\
 for the client's avatareditor.effects.icon.url (${image.library.url}fx_icons/fx_icon_%type%.png).",
             ),
+            MenuItem::op("new", "Import new Habbo furniture (download + SQL)", "habbo.import-new").help(
+                "Downloads the current furnidata, compares it with items_base in your database
+(or, without a database, with Habbo_Default/hof_furni) and downloads only the new
+furni into Generate/default_furniture, then writes their SQL to Generate/Output_SQL.
+The database itself is not changed: check the SQL and import it yourself.",
+            ),
             MenuItem::op("all", "Download All (clothes + furni + product + ...)", "habbo.all").help(
                 "Runs the full bootstrap sequence in order: clothes, furnidata, productdata,\n\
 furniture SWF, variables, texts, icons. Useful when initializing a fresh\n\

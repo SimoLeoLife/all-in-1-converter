@@ -88,6 +88,15 @@ against values printed by .NET 11.
   - **Test connection** for the database settings;
   - an **update** banner when a newer `rust-v*` release exists (`update_check`, `update_repo`
     in config.ini; also "Check for updates" in both menus).
+- The window speaks the languages of the Habbo hotels: English, Italiano, Français, Deutsch,
+  Nederlands, Español, Português (Brasil), Türkçe, Suomi (Settings → Language, saved as
+  `language` in config.ini; the first start follows the system language). Operation output and
+  the CLI stay in English. Texts live in `crates/app/assets/i18n/<code>.json`, keyed by the
+  English text; `keys.json` lists them all and a test checks every language has each one.
+- **Import new Habbo furniture** (Habbo Original, and `new` in the CLI menu): downloads the current
+  furnidata, compares it with `items_base` (or, without a database, with `Habbo_Default/hof_furni`),
+  downloads only the new furni and writes their SQL, suggesting the next free id. The database
+  itself is not changed.
 - Downloads run `download_parallelism` files at a time (default 16, config.ini) and an
   interrupted asset download resumes from its `.part` file; gamedata files always restart.
 - Before Fix offer IDs / sit-lay-walk / sprite IDs change anything, the affected tables are saved

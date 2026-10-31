@@ -12,6 +12,9 @@ pub fn tick(app: &mut ProApp, ctx: &egui::Context) {
     let frame = ctx.cumulative_pass_nr();
 
     if frame == 0 {
+        if let Ok(lang) = std::env::var("HABBO_SCREENSHOT_LANG") {
+            super::i18n::set(&lang);
+        }
         match std::env::var("HABBO_SCREENSHOT_THEME").as_deref() {
             Ok("dark") => ctx.set_theme(egui::Theme::Dark),
             Ok("light") => ctx.set_theme(egui::Theme::Light),

@@ -1,0 +1,18 @@
+{
+  "chicken": [
+    "chicken.json",
+    "chicken.webp"
+  ],
+  "fools": [
+    "fools.json",
+    "fools.webp"
+  ],
+  "monster": [
+    "monster.json",
+    "monster.webp"
+  ],
+  "terrierbaby": [
+    "terrierbaby.json",
+    "terrierbaby.webp"
+  ]
+}

@@ -1,0 +1,16 @@
+[package]
+name = "habbo-pipeline"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+habbo-core.workspace = true
+habbo-downloads.workspace = true
+habbo-db.workspace = true
+anyhow.workspace = true
+tokio.workspace = true
+mysql_async.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true
