@@ -184,28 +184,7 @@ fn write_value(value: &J, out: &mut String, depth: usize) -> Result<()> {
 
 /// The default `JavaScriptEncoder` escaping System.Text.Json uses.
 pub fn write_string(s: &str, out: &mut String) {
-    out.push('"');
-    for c in s.chars() {
-        match c {
-            '\u{8}' => out.push_str("\\b"),
-            '\t' => out.push_str("\\t"),
-            '\n' => out.push_str("\\n"),
-            '\u{c}' => out.push_str("\\f"),
-            '\r' => out.push_str("\\r"),
-            '\\' => out.push_str("\\\\"),
-            '"' | '&' | '\'' | '+' | '<' | '>' | '`' => push_unicode_escape(c, out),
-            ' '..='~' => out.push(c),
-            _ => push_unicode_escape(c, out),
-        }
-    }
-    out.push('"');
-}
-
-fn push_unicode_escape(c: char, out: &mut String) {
-    let mut units = [0u16; 2];
-    for unit in c.encode_utf16(&mut units) {
-        out.push_str(&format!("\\u{:04X}", unit));
-    }
+    habbo_core::dotnet::write_json_string(out, s, habbo_core::dotnet::Escaping::Default);
 }
 
 #[cfg(test)]

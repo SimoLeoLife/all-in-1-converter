@@ -358,30 +358,7 @@ fn write(node: &Node, out: &mut String) {
 }
 
 fn write_string(s: &str, out: &mut String) {
-    out.push('"');
-    for ch in s.chars() {
-        match ch {
-            '\n' => out.push_str("\\n"),
-            '\r' => out.push_str("\\r"),
-            '\t' => out.push_str("\\t"),
-            '\u{8}' => out.push_str("\\b"),
-            '\u{c}' => out.push_str("\\f"),
-            '\\' => out.push_str("\\\\"),
-            '"' | '&' | '\'' | '+' | '<' | '>' | '`' => push_u(ch as u32, out),
-            c if (c as u32) < 0x20 || (c as u32) >= 0x7F => {
-                let mut units = [0u16; 2];
-                for unit in c.encode_utf16(&mut units) {
-                    push_u(*unit as u32, out);
-                }
-            }
-            c => out.push(c),
-        }
-    }
-    out.push('"');
-}
-
-fn push_u(unit: u32, out: &mut String) {
-    out.push_str(&format!("\\u{unit:04X}"));
+    habbo_core::dotnet::write_json_string(out, s, habbo_core::dotnet::Escaping::Default);
 }
 
 #[cfg(test)]

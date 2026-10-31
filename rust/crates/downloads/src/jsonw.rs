@@ -5,14 +5,7 @@
 
 use serde_json::Value;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum Escaping {
-    /// `JavaScriptEncoder.Default`: only printable ASCII stays; HTML-sensitive characters and
-    /// everything non-ASCII become `\uXXXX`.
-    Default,
-    /// `JavaScriptEncoder.UnsafeRelaxedJsonEscaping`: only `"`, `\` and control characters escaped.
-    Relaxed,
-}
+pub use habbo_core::dotnet::Escaping;
 
 /// The indented JSON text, with the platform line break (`\r\n` on Windows).
 pub fn to_string_indented(value: &Value, escaping: Escaping) -> String {
@@ -82,49 +75,8 @@ fn write_value(out: &mut String, value: &Value, escaping: Escaping, newline: &st
     }
 }
 
-fn push_unicode(out: &mut String, unit: u16) {
-    out.push_str(&format!("\\u{unit:04X}"));
-}
-
 pub fn write_string(out: &mut String, text: &str, escaping: Escaping) {
-    out.push('"');
-    for ch in text.chars() {
-        match ch {
-            '\u{8}' => out.push_str("\\b"),
-            '\t' => out.push_str("\\t"),
-            '\n' => out.push_str("\\n"),
-            '\u{c}' => out.push_str("\\f"),
-            '\r' => out.push_str("\\r"),
-            '\\' => out.push_str("\\\\"),
-            '"' if escaping == Escaping::Relaxed => out.push_str("\\\""),
-            _ => {
-                let escape = match escaping {
-                    Escaping::Default => {
-                        !(' '..='~').contains(&ch) || matches!(ch, '"' | '&' | '\'' | '+' | '<' | '>' | '`')
-                    }
-                    Escaping::Relaxed => {
-                        // .NET never lets through Cc, Zs (except U+0020), Zl, Zp or private use.
-                        // NOTE(port): it also escapes unassigned code points; not tracked here.
-                        let c = ch as u32;
-                        c < 0x20
-                            || (0x7F..=0x9F).contains(&c)
-                            || matches!(c, 0xA0 | 0x1680 | 0x2000..=0x200A | 0x2028 | 0x2029 | 0x202F | 0x205F | 0x3000)
-                            || (0xE000..=0xF8FF).contains(&c)
-                            || c >= 0xF0000
-                    }
-                };
-                if escape {
-                    let mut units = [0u16; 2];
-                    for unit in ch.encode_utf16(&mut units) {
-                        push_unicode(out, *unit);
-                    }
-                } else {
-                    out.push(ch);
-                }
-            }
-        }
-    }
-    out.push('"');
+    habbo_core::dotnet::write_json_string(out, text, escaping);
 }
 
 #[cfg(test)]

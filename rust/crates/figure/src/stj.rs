@@ -124,25 +124,7 @@ fn push_indent(n: usize, out: &mut String) {
 
 /// The default System.Text.Json string escaping.
 pub fn write_string(s: &str, out: &mut String) {
-    out.push('"');
-    for ch in s.chars() {
-        match ch {
-            '\n' => out.push_str("\\n"),
-            '\r' => out.push_str("\\r"),
-            '\t' => out.push_str("\\t"),
-            '\\' => out.push_str("\\\\"),
-            '\u{8}' => out.push_str("\\b"),
-            '\u{c}' => out.push_str("\\f"),
-            c if (' '..='~').contains(&c) && !matches!(c, '"' | '&' | '\'' | '+' | '<' | '>' | '`') => out.push(c),
-            c => {
-                let mut buf = [0u16; 2];
-                for unit in c.encode_utf16(&mut buf) {
-                    out.push_str(&format!("\\u{:04X}", unit));
-                }
-            }
-        }
-    }
-    out.push('"');
+    habbo_core::dotnet::write_json_string(out, s, habbo_core::dotnet::Escaping::Default);
 }
 
 #[cfg(test)]

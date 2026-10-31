@@ -139,6 +139,8 @@ pub fn try_parse_f64(value: Option<&str>) -> Option<f64> {
     parse_float_text(value?)
 }
 
+pub use habbo_core::dotnet::{format_f32, format_f64};
+
 fn normalise_for_rust(text: &str) -> String {
     let (sign, body) = match text.strip_prefix('-') {
         Some(rest) => ("-", rest),
@@ -153,99 +155,6 @@ fn normalise_for_rust(text: &str) -> String {
         out.push('0');
     }
     out.replace(".e", ".0e").replace(".E", ".0E")
-}
-
-/// Shortest round-trip digits of a finite, non-zero value: (negative, digits, exponent)
-/// where value = 0.d1d2d3... * 10^scale, i.e. `scale` is .NET's `NumberBuffer.Scale`.
-fn shortest_digits(scientific: &str) -> (bool, String, i32) {
-    // Rust's `{:e}` gives the shortest round-trip digits, e.g. "-1.2345e-5".
-    let (negative, rest) = match scientific.strip_prefix('-') {
-        Some(rest) => (true, rest),
-        None => (false, scientific),
-    };
-    let (mantissa, exponent) = rest.split_once('e').unwrap_or((rest, "0"));
-    let exponent: i32 = exponent.parse().unwrap_or(0);
-    let mut digits: String = mantissa.chars().filter(|c| *c != '.').collect();
-    while digits.len() > 1 && digits.ends_with('0') {
-        digits.pop();
-    }
-    (negative, digits, exponent + 1)
-}
-
-/// .NET `FormatGeneral` with `nMaxDigits = max(digitCount, maxRoundTripDigits)`.
-fn format_general(negative: bool, digits: &str, scale: i32, max_round_trip_digits: usize) -> String {
-    let n_max = digits.len().max(max_round_trip_digits) as i32;
-    let mut out = String::new();
-    if negative {
-        out.push('-');
-    }
-    let mut dig_pos = scale;
-    let mut scientific = false;
-    if dig_pos > n_max || dig_pos < -3 {
-        dig_pos = 1;
-        scientific = true;
-    }
-    let digit_bytes = digits.as_bytes();
-    let mut index = 0usize;
-    if dig_pos > 0 {
-        while dig_pos > 0 {
-            out.push(if index < digit_bytes.len() { digit_bytes[index] as char } else { '0' });
-            if index < digit_bytes.len() {
-                index += 1;
-            }
-            dig_pos -= 1;
-        }
-    } else {
-        out.push('0');
-    }
-    if index < digit_bytes.len() || dig_pos < 0 {
-        out.push('.');
-        while dig_pos < 0 {
-            out.push('0');
-            dig_pos += 1;
-        }
-        while index < digit_bytes.len() {
-            out.push(digit_bytes[index] as char);
-            index += 1;
-        }
-    }
-    if scientific {
-        let exponent = scale - 1;
-        out.push('E');
-        out.push(if exponent < 0 { '-' } else { '+' });
-        out.push_str(&format!("{:02}", exponent.unsigned_abs()));
-    }
-    out
-}
-
-/// `float.ToString()` / `float.ToString("G", InvariantCulture)` (.NET Core 3.0+).
-pub fn format_f32(value: f32) -> String {
-    if value.is_nan() {
-        return "NaN".into();
-    }
-    if value.is_infinite() {
-        return if value > 0.0 { "Infinity".into() } else { "-Infinity".into() };
-    }
-    if value == 0.0 {
-        return if value.is_sign_negative() { "-0".into() } else { "0".into() };
-    }
-    let (negative, digits, scale) = shortest_digits(&format!("{value:e}"));
-    format_general(negative, &digits, scale, 9)
-}
-
-/// `double.ToString()` / what `Utf8JsonWriter.WriteNumberValue(double)` writes.
-pub fn format_f64(value: f64) -> String {
-    if value.is_nan() {
-        return "NaN".into();
-    }
-    if value.is_infinite() {
-        return if value > 0.0 { "Infinity".into() } else { "-Infinity".into() };
-    }
-    if value == 0.0 {
-        return if value.is_sign_negative() { "-0".into() } else { "0".into() };
-    }
-    let (negative, digits, scale) = shortest_digits(&format!("{value:e}"));
-    format_general(negative, &digits, scale, 17)
 }
 
 /// `ToLowerInvariant`, one char per char (like .NET's simple case mapping).

@@ -11,56 +11,7 @@ use serde_json::Value;
 /// `double.ToString(CultureInfo.InvariantCulture)` (.NET Core 3.0+): the shortest round-trip
 /// digits, scientific (`1E-05`, `1E+15`) below 1e-4 or from 1e15 on.
 pub fn double_to_string(value: f64) -> String {
-    if value.is_nan() {
-        return "NaN".into();
-    }
-    if value.is_infinite() {
-        return if value > 0.0 { "∞".into() } else { "-∞".into() };
-    }
-    if value == 0.0 {
-        return if value.is_sign_negative() { "-0".into() } else { "0".into() };
-    }
-
-    // "{:e}" gives the shortest round-trip digits: "-1.2345e-7".
-    let sci = format!("{value:e}");
-    let (mantissa, exponent) = sci.split_once('e').unwrap();
-    let exponent: i32 = exponent.parse().unwrap();
-    let negative = mantissa.starts_with('-');
-    let digits: String = mantissa.chars().filter(|c| c.is_ascii_digit()).collect();
-
-    let mut out = String::new();
-    if negative {
-        out.push('-');
-    }
-    if !(-4..15).contains(&exponent) {
-        out.push_str(&digits[..1]);
-        if digits.len() > 1 {
-            out.push('.');
-            out.push_str(&digits[1..]);
-        }
-        out.push('E');
-        out.push(if exponent < 0 { '-' } else { '+' });
-        out.push_str(&format!("{:02}", exponent.abs()));
-    } else if exponent < 0 {
-        out.push_str("0.");
-        for _ in 0..(-exponent - 1) {
-            out.push('0');
-        }
-        out.push_str(&digits);
-    } else {
-        let int_len = exponent as usize + 1;
-        if digits.len() <= int_len {
-            out.push_str(&digits);
-            for _ in digits.len()..int_len {
-                out.push('0');
-            }
-        } else {
-            out.push_str(&digits[..int_len]);
-            out.push('.');
-            out.push_str(&digits[int_len..]);
-        }
-    }
-    out
+    habbo_core::dotnet::format_f64(value)
 }
 
 /// `value.ToString("0.00")` (or `{value:0.00}`) with .NET's rounding: half away from zero on
@@ -233,21 +184,7 @@ fn write_value(out: &mut String, value: &Value, depth: usize) {
 /// A JSON string the way System.Text.Json's default encoder writes it: only printable ASCII
 /// stays as is, minus `" & ' + < > \` and the backtick.
 fn write_string(out: &mut String, s: &str) {
-    out.push('"');
-    for unit in s.encode_utf16() {
-        match unit {
-            0x08 => out.push_str("\\b"),
-            0x09 => out.push_str("\\t"),
-            0x0A => out.push_str("\\n"),
-            0x0C => out.push_str("\\f"),
-            0x0D => out.push_str("\\r"),
-            0x5C => out.push_str("\\\\"),
-            0x22 | 0x26 | 0x27 | 0x2B | 0x3C | 0x3E | 0x60 => out.push_str(&format!("\\u{unit:04X}")),
-            0x20..=0x7E => out.push(unit as u8 as char),
-            _ => out.push_str(&format!("\\u{unit:04X}")),
-        }
-    }
-    out.push('"');
+    habbo_core::dotnet::write_json_string(out, s, habbo_core::dotnet::Escaping::Default);
 }
 
 /// `JToken.ToString()` of a JSON value as the furnidata code used it on scalar values.
@@ -316,7 +253,8 @@ mod tests {
         assert_eq!(double_to_string(0.00001), "1E-05");
         assert_eq!(double_to_string(1.5e-7), "1.5E-07");
         assert_eq!(double_to_string(1e14), "100000000000000");
-        assert_eq!(double_to_string(1e15), "1E+15");
+        assert_eq!(double_to_string(1e15), "1000000000000000"); // checked against .NET 11
+        assert_eq!(double_to_string(1e20), "1E+20");
         assert_eq!(double_to_string(-2.25), "-2.25");
     }
 

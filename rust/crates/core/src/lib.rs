@@ -9,6 +9,7 @@
 pub mod bootstrap;
 pub mod config;
 pub mod console;
+pub mod dotnet;
 pub mod ffdec;
 pub mod hotels;
 pub mod http;
