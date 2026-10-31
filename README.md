@@ -21,6 +21,14 @@ plus a self-contained binary for Windows and Linux.
 | SWF decompiler | JPEXS Free Flash Decompiler (`Tools/ffdec/`) |
 | Data formats | Strict single-file JSON |
 
+## Rust version
+
+[`rust/`](rust/README.md) holds a full Rust port of the converter: every operation, the
+classic CLI menus and the Professional window (egui). Checked against this C# build on real
+Habbo files, its output is byte-for-byte the same (json, SQL, gamedata) and pixel-for-pixel
+the same (sheets). It is one 33 MB exe with FFDec inside, and converts faster. See
+[rust/README.md](rust/README.md) to build it.
+
 ## Four ways to drive it
 
 The same menus and tools sit behind each shell, so anything you learn in
