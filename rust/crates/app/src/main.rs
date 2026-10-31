@@ -31,6 +31,10 @@ fn real_main() -> i32 {
 
     // Unpack FFDec from the binary on first launch; no-op when it is already on disk.
     embedded_tools::ensure_extracted();
+    // The C# build shipped config.ini beside the binary; write it when this folder has none.
+    if let Err(error) = habbo_core::ini::ensure_default_config() {
+        eprintln!("Could not create config.ini: {error}");
+    }
     habbo_core::workspace::runtime::load(&habbo_core::ini::default_config_path());
     console::set_source(Some(Arc::new(cli::terminal::TerminalSource)));
 

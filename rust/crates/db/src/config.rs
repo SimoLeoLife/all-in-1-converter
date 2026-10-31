@@ -58,8 +58,10 @@ impl DatabaseConfig {
         let bytes = std::fs::read(CONFIG_FILE_PATH).unwrap_or_default();
         let text = String::from_utf8_lossy(&bytes);
         let text = text.strip_prefix('\u{feff}').unwrap_or(&text);
-        // File.ReadAllLines splits on \r\n, \n and \r.
-        Self::from_lines(text.split("\r\n").flat_map(|l| l.split(['\n', '\r'])))
+        // File.ReadAllLines splits on \r\n, \n and \r. The shipped config.ini comes first, so a
+        // file without some DATABASE* line still gets its value.
+        let defaults = habbo_core::ini::DEFAULT_CONFIG.lines();
+        Self::from_lines(defaults.chain(text.split("\r\n").flat_map(|l| l.split(['\n', '\r']))))
     }
 
     /// The C# `ConnectionString` text.
