@@ -106,7 +106,7 @@ fn build() -> Vec<OperationDefinition> {
         op("habbo.pets", HabboOriginal, "Download pets", "Download official pet libraries as .swf and/or .hab (config.ini download_format).", act!(habbo_downloads::pets::download_pets), false, false),
         op("habbo.effect-icons", HabboOriginal, "Extract effect icons", "Extract the avatar effect icons (fx_icon_<type>) from Habbo's inventory bundle into fx_icons/.", act!(habbo_downloads::effect_icons::extract_effect_icons), false, false),
         op("habbo.import-new", HabboOriginal, "Import new Habbo furniture", "Find the furni Habbo added that your database does not have yet, download only those and write their SQL.", act!(habbo_pipeline::import_new_furniture), true, false),
-        op("habbo.catalog-rip", HabboOriginal, "Rip Habbo catalogue (G-Earth)", "With G-Earth connected to your Habbo client, save the whole catalogue: page tree, layouts, texts, images, offers and prices, as JSON and Arcturus SQL.", act!(habbo_catalog::rip_catalog), false, false),
+        op("habbo.catalog-rip", HabboOriginal, "Rip Habbo catalogue (G-Earth)", "With G-Earth connected to your Habbo client, save the whole catalogue: page tree, layouts, texts, images, offers and prices, as JSON and Arcturus SQL.", act!(habbo_catalog::rip_catalog), true, false),
         op("habbo.all", HabboOriginal, "Download all", "Run the complete official asset download sequence.", act!(crate::ops::download_all), true, false),
 
         op("nitro.furniture", NitroCustom, "Download Nitro furniture", "Download custom Nitro furniture, icons and FurnitureData.json.", act!(habbo_downloads::nitro_furniture::download_nitro_furniture), true, false),

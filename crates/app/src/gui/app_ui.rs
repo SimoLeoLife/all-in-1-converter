@@ -698,7 +698,8 @@ impl ProApp {
         });
         ui.add_space(6.0);
 
-        let needs_input = operation.is_some_and(|o| o.requires_input);
+        // Any running operation may ask something (e.g. "download G-Earth?"), so the box shows while it runs.
+        let needs_input = operation.is_some_and(|o| o.requires_input) || self.is_running;
         let reserved = if needs_input { 52.0 } else { 0.0 };
         let log_height = (ui.available_height() - reserved).max(160.0);
         egui::Frame::new()
