@@ -150,6 +150,8 @@ fn comment(text: &str) -> String {
 
 /// The `page_layout` enum of Arcturus' catalog_pages.
 pub const ARCTURUS_LAYOUTS: &[&str] = &[
+    // Added to the enum by Polaris' migration V20261014120000 (RecolorableFurnitureLayout).
+    "recolorable_furniture",
     "default_3x3",
     "club_buy",
     "club_gift",
