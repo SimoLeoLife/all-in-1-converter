@@ -354,7 +354,18 @@ pub struct CatalogPage {
     pub packet_layout: String,
 }
 
-fn read_product(r: &mut Reader) -> Result<Product> {
+/// Variations of the offer/product layout seen across clients: the current Habbo client
+/// (2026) adds an int after the points type in an offer and a second string after a product's
+/// extra parameter, compared with the Arcturus-era layout.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+struct Layout {
+    extended: bool,
+    season_flag: bool,
+    offer_extra_int: bool,
+    product_extra_string: bool,
+}
+
+fn read_product(r: &mut Reader, layout: Layout) -> Result<Product> {
     let product_type = r.string("product type")?.to_lowercase();
     if product_type == "b" {
         let extra_param = r.string("badge code")?;
@@ -370,6 +381,9 @@ fn read_product(r: &mut Reader) -> Result<Product> {
     }
     let class_id = r.i32("product class id")?;
     let extra_param = r.string("product extra")?;
+    if layout.product_extra_string {
+        let _ = r.string("product second string")?;
+    }
     let count = r.i32("product count")?;
     let limited = r.bool("product limited")?;
     let (limited_series_size, limited_items_left) = if limited {
@@ -388,18 +402,22 @@ fn read_product(r: &mut Reader) -> Result<Product> {
     })
 }
 
-fn read_offer(r: &mut Reader, extended: bool) -> Result<Offer> {
+fn read_offer(r: &mut Reader, layout: Layout) -> Result<Offer> {
+    let extended = layout.extended;
     let offer_id = r.i32("offer id")?;
     let localization_id = r.string("offer localization")?;
     let rent = r.bool("offer rent")?;
     let price_credits = r.i32("offer credits")?;
     let price_activity_points = r.i32("offer points")?;
     let activity_point_type = r.i32("offer points type")?;
+    if layout.offer_extra_int {
+        let _ = r.i32("offer extra int")?;
+    }
     let giftable = r.bool("offer giftable")?;
     let count = r.count(4, "offer product count")?;
     let mut products = Vec::with_capacity(count);
     for _ in 0..count {
-        products.push(read_product(r)?);
+        products.push(read_product(r, layout)?);
     }
     let club_level = r.i32("offer club level")?;
     let bundle_purchase_allowed = r.bool("offer bundle purchase")?;
@@ -456,7 +474,8 @@ fn read_frontpage_item(r: &mut Reader) -> Result<FrontPageItem> {
     })
 }
 
-fn parse_page_variant(body: &[u8], extended: bool, season_flag: bool) -> Result<CatalogPage> {
+fn parse_page_variant(body: &[u8], variant: Layout) -> Result<CatalogPage> {
+    let season_flag = variant.season_flag;
     let mut r = Reader::new(body);
     let page_id = r.i32("page id")?;
     let mode = r.string("page mode")?;
@@ -474,7 +493,7 @@ fn parse_page_variant(body: &[u8], extended: bool, season_flag: bool) -> Result<
     let offer_count = r.count(30, "offer count")?;
     let mut offers = Vec::with_capacity(offer_count);
     for _ in 0..offer_count {
-        offers.push(read_offer(&mut r, extended)?);
+        offers.push(read_offer(&mut r, variant)?);
     }
     let offer_id = r.i32("page offer id")?;
     let accept_season_currency_as_credits = if season_flag {
@@ -492,7 +511,7 @@ fn parse_page_variant(body: &[u8], extended: bool, season_flag: bool) -> Result<
     if !r.is_empty() {
         bail!("{} bytes left after the page", r.remaining());
     }
-    let packet_layout = if extended { "extended" } else { "classic" }.to_string();
+    let packet_layout = layout_name(variant);
     Ok(CatalogPage {
         page_id,
         mode,
@@ -507,17 +526,33 @@ fn parse_page_variant(body: &[u8], extended: bool, season_flag: bool) -> Result<
     })
 }
 
-/// Parses a CatalogPage body, detecting the offer layout.
+fn layout_name(layout: Layout) -> String {
+    let mut name = if layout.extended { "extended" } else { "classic" }.to_string();
+    if layout.offer_extra_int {
+        name.push_str("+offer int");
+    }
+    if layout.product_extra_string {
+        name.push_str("+product string");
+    }
+    if !layout.season_flag {
+        name.push_str(" without season flag");
+    }
+    name
+}
+
+/// Parses a CatalogPage body, trying every known offer layout; the first that reads the packet
+/// to its exact end wins.
 pub fn parse_page(body: &[u8]) -> Result<CatalogPage> {
     let mut errors = Vec::new();
-    for (extended, season) in [(false, true), (true, true), (false, false), (true, false)] {
-        match parse_page_variant(body, extended, season) {
-            Ok(page) => return Ok(page),
-            Err(e) => errors.push(format!(
-                "{}{}: {e}",
-                if extended { "extended" } else { "classic" },
-                if season { "" } else { " without season flag" }
-            )),
+    for offer_extra_int in [false, true] {
+        for product_extra_string in [false, true] {
+            for (extended, season_flag) in [(false, true), (true, true), (false, false), (true, false)] {
+                let layout = Layout { extended, season_flag, offer_extra_int, product_extra_string };
+                match parse_page_variant(body, layout) {
+                    Ok(page) => return Ok(page),
+                    Err(e) => errors.push(format!("{}: {e}", layout_name(layout))),
+                }
+            }
         }
     }
     bail!("unreadable catalogue page ({})", errors.join("; "))

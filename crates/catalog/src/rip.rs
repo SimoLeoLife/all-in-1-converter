@@ -306,6 +306,12 @@ impl<'a> Ripper<'a> {
                     }
                     Err(e) => {
                         if let Some((id, mode)) = packets::page_key(&p.packet.body) {
+                            // Keep the raw packet so the layout can be worked out from real data.
+                            let dir = self.options.output_root.join("unreadable_pages");
+                            let file = dir.join(format!("{}_{id}.bin", mode.to_ascii_uppercase()));
+                            if std::fs::create_dir_all(&dir).and_then(|_| std::fs::write(&file, &p.packet.body)).is_ok() {
+                                outln!("  raw page saved: {}", file.display());
+                            }
                             self.unreadable
                                 .insert((mode.to_ascii_uppercase(), id), format!("{e:#}"));
                         } else {
@@ -525,9 +531,9 @@ fn print_instructions(options: &RipOptions) {
     outln!("This reads the catalogue the way your own client does: G-Earth relays the requests through your");
     outln!("logged-in session. Nothing is bought or changed; your game traffic passes through unchanged.");
     outln!();
-    outln!("  1. Start G-Earth and connect it to the hotel (Connection tab). Not running? This offers to");
-    outln!("     download the official G-Earth into Tools/G-Earth and start it.");
-    outln!("  2. Start your Habbo client and log in as usual.");
+    outln!("  1. Start G-Earth AS ADMINISTRATOR (it edits the hosts file for the Flash/AIR client). Not");
+    outln!("     running? This offers to download the official G-Earth into Tools/G-Earth and start it.");
+    outln!("  2. With the Habbo client closed, press Connect in G-Earth; then open the client and log in.");
     outln!(
         "  3. G-Earth may ask whether to allow the extension \"{}\": answer Yes.",
         options.extension.title
