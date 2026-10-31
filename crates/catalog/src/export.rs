@@ -943,7 +943,8 @@ mod tests {
         assert_eq!(arcturus_layout("frontpage4"), Some("frontpage"));
         assert_eq!(arcturus_layout("guild_custom_furni"), Some("guild_furni"));
         assert_eq!(arcturus_layout("default_3x3"), Some("default_3x3"));
-        assert_eq!(arcturus_layout("recolorable_furniture"), None);
+        assert_eq!(arcturus_layout("recolorable_furniture"), Some("recolorable_furniture"));
+        assert_eq!(arcturus_layout("default_3x3_extrainfo"), None);
     }
 
     #[test]
