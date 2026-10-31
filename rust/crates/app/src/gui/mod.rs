@@ -44,11 +44,17 @@ const MODULES: &[(OperationCategory, &str, &str, &str, &str)] = &[
 pub fn run(runtime: tokio::runtime::Handle, show_selector: bool) {
     let size = if show_selector { [860.0, 440.0] } else { [1380.0, 860.0] };
     let min = if show_selector { [760.0, 420.0] } else { [1040.0, 700.0] };
+    let mut viewport = egui::ViewportBuilder::default()
+        .with_title("All-in-1 Converter")
+        .with_inner_size(size)
+        .with_min_inner_size(min);
+    if let Ok(icon) = image::load_from_memory(include_bytes!("../../resources/app.ico")) {
+        let icon = icon.into_rgba8();
+        let (width, height) = icon.dimensions();
+        viewport = viewport.with_icon(egui::IconData { rgba: icon.into_raw(), width, height });
+    }
     let options = eframe::NativeOptions {
-        viewport: egui::ViewportBuilder::default()
-            .with_title("All-in-1 Converter")
-            .with_inner_size(size)
-            .with_min_inner_size(min),
+        viewport,
         centered: true,
         ..Default::default()
     };

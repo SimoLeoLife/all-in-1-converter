@@ -6,6 +6,13 @@ use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 
 fn main() {
+    // The exe icon and version information (windres on the GNU toolchain, rc.exe on MSVC).
+    if std::env::var("CARGO_CFG_TARGET_OS").as_deref() == Ok("windows") {
+        println!("cargo:rerun-if-changed=resources/app.rc");
+        println!("cargo:rerun-if-changed=resources/app.ico");
+        embed_resource::compile("resources/app.rc", embed_resource::NONE).manifest_optional().unwrap();
+    }
+
     let manifest = PathBuf::from(std::env::var("CARGO_MANIFEST_DIR").unwrap());
     let tools = manifest.join("../../../Compiled/Tools");
     let out = PathBuf::from(std::env::var("OUT_DIR").unwrap()).join("EmbeddedTools.zip");
