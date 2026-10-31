@@ -30,6 +30,27 @@ pub enum Color {
 }
 
 impl Color {
+    fn ansi_background(self) -> &'static str {
+        match self {
+            Color::Black => "\x1b[40m",
+            Color::DarkRed => "\x1b[41m",
+            Color::DarkGreen => "\x1b[42m",
+            Color::DarkYellow => "\x1b[43m",
+            Color::DarkBlue => "\x1b[44m",
+            Color::DarkMagenta => "\x1b[45m",
+            Color::DarkCyan => "\x1b[46m",
+            Color::Gray => "\x1b[47m",
+            Color::DarkGray => "\x1b[100m",
+            Color::Red => "\x1b[101m",
+            Color::Green => "\x1b[102m",
+            Color::Yellow => "\x1b[103m",
+            Color::Blue => "\x1b[104m",
+            Color::Magenta => "\x1b[105m",
+            Color::Cyan => "\x1b[106m",
+            Color::White => "\x1b[107m",
+        }
+    }
+
     fn ansi(self) -> &'static str {
         match self {
             Color::Black => "\x1b[30m",
@@ -55,18 +76,24 @@ impl Color {
 /// Where output goes. Text arrives already formatted; colour changes arrive in order with it.
 pub trait Sink: Send + Sync {
     fn write(&self, text: &str);
-    /// `None` resets to the default colour.
+    /// `None` resets both colours to the defaults.
     fn set_color(&self, _color: Option<Color>) {}
+    fn set_background(&self, _color: Color) {}
     fn clear(&self) {}
 }
 
 /// Where `read_line` gets its lines. `None` means end of input (C#'s `ReadLine() == null`).
 pub trait Source: Send + Sync {
     fn read_line(&self) -> Option<String>;
+    /// `Console.ReadKey()`: waits for one key. Sources without single keys wait for a line.
+    fn read_key(&self) {
+        let _ = self.read_line();
+    }
 }
 
 struct TerminalSink {
     lock: Mutex<()>,
+    ansi: bool,
 }
 
 impl Sink for TerminalSink {
@@ -77,12 +104,23 @@ impl Sink for TerminalSink {
         let _ = stdout.flush();
     }
 
+    // Colours and clearing only on a real terminal; redirected output stays plain text.
     fn set_color(&self, color: Option<Color>) {
-        self.write(color.map_or("\x1b[0m", Color::ansi));
+        if self.ansi {
+            self.write(color.map_or("\x1b[0m", Color::ansi));
+        }
+    }
+
+    fn set_background(&self, color: Color) {
+        if self.ansi {
+            self.write(color.ansi_background());
+        }
     }
 
     fn clear(&self) {
-        self.write("\x1b[2J\x1b[3J\x1b[H");
+        if self.ansi {
+            self.write("\x1b[2J\x1b[3J\x1b[H");
+        }
     }
 }
 
@@ -107,8 +145,9 @@ fn sink() -> Arc<dyn Sink> {
     }
     let mut slot = SINK.write().unwrap_or_else(|e| e.into_inner());
     slot.get_or_insert_with(|| {
-        let _ = enable_ansi_support::enable_ansi_support();
-        Arc::new(TerminalSink { lock: Mutex::new(()) })
+        use std::io::IsTerminal;
+        let ansi = std::io::stdout().is_terminal() && enable_ansi_support::enable_ansi_support().is_ok();
+        Arc::new(TerminalSink { lock: Mutex::new(()), ansi })
     })
     .clone()
 }
@@ -153,9 +192,19 @@ pub fn set_color(color: Color) {
     sink().set_color(Some(color));
 }
 
+/// `Console.BackgroundColor = color`.
+pub fn set_background(color: Color) {
+    sink().set_background(color);
+}
+
 /// `Console.ResetColor()`.
 pub fn reset_color() {
     sink().set_color(None);
+}
+
+/// `Console.ReadKey()`.
+pub fn read_key() {
+    source().read_key();
 }
 
 /// `Console.Clear()`.

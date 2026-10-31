@@ -3,8 +3,12 @@
 //! size-32 merge).
 
 pub mod bundle;
+pub mod bundle_tools;
 pub mod bundler;
+pub mod compiled_handler;
+pub mod hab_size32;
 pub mod hab;
+pub mod nitro_to_hab;
 pub mod reader;
 pub mod sheet_webp;
 pub mod writer;

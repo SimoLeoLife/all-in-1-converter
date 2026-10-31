@@ -7,7 +7,10 @@ use std::path::{Path, PathBuf};
 use anyhow::Result;
 use habbo_core::outln;
 
+pub mod decompiler;
 mod native;
+
+pub use decompiler::decompile;
 
 const DISABLE_ENV_VAR: &str = "CONFURTER_DISABLE_NATIVE_SWF";
 const VERIFY_ENV_VAR: &str = "CONFURTER_VERIFY_NATIVE_SWF";
