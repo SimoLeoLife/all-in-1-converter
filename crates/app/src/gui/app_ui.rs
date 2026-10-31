@@ -1006,6 +1006,9 @@ fn logo_tile(ui: &egui::Ui, rect: egui::Rect, icon_size: f32) {
 /// One operation in a list: title (+ CAUTION), two lines of description, optional chevron.
 fn operation_row(ui: &mut egui::Ui, palette: &Palette, operation: &OperationDefinition, selected: bool, enabled: bool, chevron: bool) -> egui::Response {
     let fill = if selected { palette.selected } else { Color32::TRANSPARENT };
+    // The hover background goes under the row: its place in the paint order is kept here and
+    // filled once the row's size and hover state are known.
+    let hover_background = ui.painter().add(egui::Shape::Noop);
     let inner = egui::Frame::new().fill(fill).corner_radius(8).inner_margin(egui::Margin::symmetric(12, 9)).show(ui, |ui| {
         ui.set_width(ui.available_width());
         ui.horizontal(|ui| {
@@ -1033,7 +1036,11 @@ fn operation_row(ui: &mut egui::Ui, palette: &Palette, operation: &OperationDefi
     });
     let response = inner.response.interact(if enabled { egui::Sense::click() } else { egui::Sense::hover() });
     if response.hovered() && enabled && !selected {
-        ui.painter().rect_filled(response.rect, 8.0, theme::with_alpha(palette.hover, 120));
+        let edge = if theme::hotel() { egui::Stroke::new(1.5_f32, palette.card_border) } else { egui::Stroke::NONE };
+        ui.painter().set(
+            hover_background,
+            egui::epaint::RectShape::new(response.rect, 8.0, palette.hover, edge, egui::StrokeKind::Inside),
+        );
     }
     if response.hovered() && enabled {
         ui.ctx().set_cursor_icon(egui::CursorIcon::PointingHand);
