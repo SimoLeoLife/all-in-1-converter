@@ -10,6 +10,7 @@ mod gui;
 mod launch_context;
 mod ops;
 mod runner;
+mod update;
 
 use std::sync::Arc;
 
@@ -31,6 +32,8 @@ fn real_main() -> i32 {
 
     // Unpack FFDec from the binary on first launch; no-op when it is already on disk.
     embedded_tools::ensure_extracted();
+    // The previous exe, left behind by a self-update.
+    update::cleanup_old();
     // The C# build shipped config.ini beside the binary; write it when this folder has none.
     if let Err(error) = habbo_core::ini::ensure_default_config() {
         eprintln!("Could not create config.ini: {error}");

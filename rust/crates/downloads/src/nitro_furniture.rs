@@ -14,6 +14,7 @@ use serde::Deserialize;
 use tokio::sync::Semaphore;
 
 use crate::common::{self, colored, FetchError, NULL_REFERENCE};
+use crate::resume;
 
 const MAX_CONCURRENCY: usize = 100;
 
@@ -58,7 +59,7 @@ pub async fn download_nitro_furniture() -> Result<()> {
     let furnidata_json_path = "./temp/furnidata.json";
 
     outln!("Downloading furnidata JSON file...");
-    if let Err(error) = download_file(&furnidata_url, Path::new(furnidata_json_path), "furnidata.json").await {
+    if let Err(error) = download_file(&furnidata_url, Path::new(furnidata_json_path), "furnidata.json", &resume::Options::FRESH).await {
         colored(Color::Red, &format!("Error downloading furnidata: {error}"));
         return Ok(());
     }
@@ -162,7 +163,7 @@ async fn download_once(
     }
     let _permit = global.acquire().await.expect("semaphore");
     colored(Color::Green, &format!("Downloading: {file_name}"));
-    match download_file(url, path, file_name).await {
+    match download_file(url, path, file_name, &resume::Options::default()).await {
         Ok(()) => {
             counter.fetch_add(1, Ordering::SeqCst);
         }
@@ -170,13 +171,9 @@ async fn download_once(
     }
 }
 
-async fn download_file(url: &str, file_path: &Path, file_name: &str) -> Result<(), FetchError> {
-    let result: Result<(), FetchError> = async {
-        let content = common::get_bytes(common::default_client(), url).await?;
-        workspace::write_output(file_path, &content)?;
-        Ok(())
-    }
-    .await;
+/// `options`: `FRESH` for the furnidata (it changes between runs), resumable for .nitro and icons.
+async fn download_file(url: &str, file_path: &Path, file_name: &str, options: &resume::Options) -> Result<(), FetchError> {
+    let result: Result<(), FetchError> = resume::download_to_workspace(common::default_client(), url, file_path, options).await;
     match &result {
         Ok(()) => colored(Color::Green, &format!("Downloaded: {file_name}")),
         Err(FetchError::Http(message)) => colored(Color::Red, &format!("Error downloading {file_name}: {message}")),

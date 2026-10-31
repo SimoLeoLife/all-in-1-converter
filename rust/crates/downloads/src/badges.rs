@@ -8,6 +8,7 @@ use futures::StreamExt;
 use habbo_core::{console, outln, paths, Color};
 
 use crate::common::{self, colored, FetchError};
+use crate::resume;
 
 const BADGES_DIRECTORY: &str = "./Habbo_Default/badges";
 const TEMP_DIRECTORY: &str = "./temp";
@@ -68,26 +69,16 @@ async fn read_badge_names(domain: &str) -> anyhow::Result<Vec<String>> {
     let url = format!("https://www.habbo.{domain}/gamedata/external_flash_texts/1");
     let file_path = Path::new(TEMP_DIRECTORY).join(format!("external_flash_texts_{domain}.txt"));
 
-    let response = match common::send(common::default_client(), &url).await {
-        Ok(response) => response,
-        Err(FetchError::Http(message)) => {
-            colored(Color::Red, &format!("HTTP request failed for {domain}: {message}"));
+    let client = common::default_client();
+    match resume::fetch(|| client.get(&url), &file_path, &resume::Options::FRESH).await {
+        Ok(resume::Fetched::Done(part)) => part.commit()?,
+        Ok(resume::Fetched::Status(status)) => {
+            colored(
+                Color::Red,
+                &format!("Failed to download external flash texts for {domain}. Status code: {}", common::status_name(status)),
+            );
             return Ok(Vec::new());
         }
-        Err(FetchError::Other(error)) => return Err(error),
-    };
-    if !response.status().is_success() {
-        colored(
-            Color::Red,
-            &format!(
-                "Failed to download external flash texts for {domain}. Status code: {}",
-                common::status_name(response.status())
-            ),
-        );
-        return Ok(Vec::new());
-    }
-    match common::body(response).await {
-        Ok(bytes) => std::fs::write(&file_path, bytes)?,
         Err(FetchError::Http(message)) => {
             colored(Color::Red, &format!("HTTP request failed for {domain}: {message}"));
             return Ok(Vec::new());
@@ -126,14 +117,15 @@ async fn download_badge(badge_name: &str) {
     }
 
     let result: Result<bool, FetchError> = async {
-        let response = common::send(common::default_client(), &url).await?;
-        if !response.status().is_success() {
-            return Ok(false);
+        // Streamed into a .part first (resumed by the next run), so a failed download never leaves half a .gif.
+        let client = common::default_client();
+        match resume::fetch(|| client.get(&url), &file_path, &resume::Options::default()).await? {
+            resume::Fetched::Done(part) => {
+                part.commit()?;
+                Ok(true)
+            }
+            resume::Fetched::Status(_) => Ok(false),
         }
-        let bytes = common::body(response).await?;
-        // Written next to it first, so a failed download never leaves half a .gif.
-        crate::asset_downloader::save(&file_path, &bytes)?;
-        Ok(true)
     }
     .await;
 

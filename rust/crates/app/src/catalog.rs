@@ -143,6 +143,7 @@ fn build() -> Vec<OperationDefinition> {
         op("database.item-size", Database, "Fix width, length and height", "Write Generate/Update_Item_size_<date>.sql with the width, length and stack_height of each floor/wall furni (no multiheight, no pets) from Habbo_Default/hof_furni/hab, plus Missing_Hab_files_<date>.txt.", act!(habbo_db::fix_item_size::run), false, false),
 
         op("general.version", General, "Current Habbo client version", "Fetch the current official Habbo client build.", act!(crate::ops::display_version), false, false),
+        op("general.update", General, "Check for updates", "Look for a newer release of the converter on GitHub and install it.", act!(crate::update::check_and_install), true, false),
         op("general.credits", General, "Credits and contributors", "Show project authors and contributors.", act!({ crate::cli::credits::show(); Ok(()) }), false, false),
     ]
 }
@@ -163,7 +164,7 @@ mod tests {
         ids.sort();
         ids.dedup();
         assert_eq!(ids.len(), count);
-        assert_eq!(count, 49);
+        assert_eq!(count, 50);
         for id in ["habbo.all", "tools.swf-furniture-hab", "tools.generate-sql", "database.info"] {
             assert!(find(id).is_some());
         }

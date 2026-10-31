@@ -8,6 +8,7 @@ use habbo_core::workspace::runtime;
 use habbo_core::{outln, Color};
 
 use crate::common::{self, colored, FetchError};
+use crate::resume;
 use crate::model;
 
 const XML_PATH: &str = "./Habbo_Default/files/txt/furnidata_xml.xml";
@@ -53,12 +54,7 @@ pub async fn download_furnidata() -> Result<()> {
 }
 
 async fn download_file(url: &str, file_path: &str, file_name: &str) -> Result<(), FetchError> {
-    let result: Result<(), FetchError> = async {
-        let bytes = common::get_bytes(common::default_client(), url).await?;
-        std::fs::write(file_path, bytes)?;
-        Ok(())
-    }
-    .await;
+    let result: Result<(), FetchError> = resume::download_to(common::default_client(), url, std::path::Path::new(file_path), &resume::Options::FRESH).await;
     match &result {
         Ok(()) => colored(Color::Green, &format!("✅ Downloaded: {file_name}")),
         Err(FetchError::Http(message)) => colored(Color::Red, &format!("❌ Error downloading {file_name}: {message}")),

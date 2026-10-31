@@ -2,6 +2,8 @@
 //! live output and an answer box, and the config.ini editor.
 
 mod app_ui;
+mod history;
+mod preview;
 mod flags;
 mod log;
 mod screenshot;
@@ -79,17 +81,78 @@ enum Page {
     Settings,
 }
 
-enum Dialog {
-    Workspace(&'static OperationDefinition),
-    Destructive(&'static OperationDefinition),
-    LeaveSettings(Box<dyn FnOnce(&mut ProApp)>),
-    SwitchInterface,
+/// What to do once a confirmation dialog is accepted.
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum After {
+    Run,
+    Queue,
 }
 
-struct RunHistoryItem {
-    title: &'static str,
-    succeeded: bool,
-    finished_at: chrono::DateTime<chrono::Local>,
+enum Dialog {
+    Workspace(&'static OperationDefinition, After),
+    Destructive(&'static OperationDefinition, After),
+    LeaveSettings(Box<dyn FnOnce(&mut ProApp)>),
+    SwitchInterface,
+    /// SWF files dropped on the window: pick what they are.
+    DroppedSwf(Vec<std::path::PathBuf>),
+}
+
+/// The background update check and install.
+#[derive(Default)]
+struct UpdateState {
+    checking: Option<mpsc::Receiver<Option<crate::update::Release>>>,
+    available: Option<crate::update::Release>,
+    installing: Option<mpsc::Receiver<Result<std::path::PathBuf, String>>>,
+    installed: Option<std::path::PathBuf>,
+    error: Option<String>,
+}
+
+impl UpdateState {
+    fn start(runtime: &tokio::runtime::Handle) -> Self {
+        if !crate::update::check_enabled() || std::env::var_os("HABBO_SCREENSHOT").is_some() {
+            return Self::default();
+        }
+        let (sender, receiver) = mpsc::channel();
+        runtime.spawn(async move {
+            // Offline or rate-limited: no banner, no message.
+            let _ = sender.send(crate::update::check().await.ok().flatten());
+        });
+        Self { checking: Some(receiver), ..Self::default() }
+    }
+
+    fn poll(&mut self) {
+        if let Some(receiver) = &self.checking {
+            if let Ok(result) = receiver.try_recv() {
+                self.available = result;
+                self.checking = None;
+            }
+        }
+        if let Some(receiver) = &self.installing {
+            if let Ok(result) = receiver.try_recv() {
+                self.installing = None;
+                match result {
+                    Ok(exe) => self.installed = Some(exe),
+                    Err(error) => self.error = Some(error),
+                }
+            }
+        }
+    }
+
+    fn install(&mut self, runtime: &tokio::runtime::Handle) {
+        let Some(release) = self.available.clone() else { return };
+        let (sender, receiver) = mpsc::channel();
+        self.installing = Some(receiver);
+        self.error = None;
+        runtime.spawn(async move {
+            let _ = sender.send(crate::update::install(&release).await.map_err(|e| format!("{e:#}")));
+        });
+    }
+}
+
+/// A run waiting its turn, with the answers its prompts will get.
+struct QueuedRun {
+    operation: &'static OperationDefinition,
+    answers: Vec<String>,
 }
 
 struct WorkspaceView {
@@ -112,7 +175,10 @@ pub struct ProApp {
     last_run_succeeded: bool,
     status_text: String,
     input_text: String,
-    recent_runs: Vec<RunHistoryItem>,
+    history: history::History,
+    queue: std::collections::VecDeque<QueuedRun>,
+    preview: Option<preview::BundlePreview>,
+    running_id: Option<&'static str>,
     hotel: Option<HabboHotel>,
     hotel_known: bool,
     settings: settings::SettingsPage,
@@ -120,7 +186,9 @@ pub struct ProApp {
     dialog: Option<Dialog>,
     focus_input: bool,
     /// Set by `start`; the next frame launches it (the repaint hook needs the egui context).
-    pending_start: Option<&'static OperationDefinition>,
+    pending_start: Option<(&'static OperationDefinition, Vec<String>)>,
+    runtime: tokio::runtime::Handle,
+    update: UpdateState,
     running_title: Option<&'static str>,
 }
 
@@ -132,7 +200,9 @@ impl ProApp {
             .map(|p| p.display().to_string())
             .unwrap_or_default();
         let mut app = Self {
-            runner: OperationRunner::new(runtime),
+            runner: OperationRunner::new(runtime.clone()),
+            update: UpdateState::start(&runtime),
+            runtime: runtime.clone(),
             selector,
             page: Page::Dashboard,
             selected: None,
@@ -143,10 +213,13 @@ impl ProApp {
             last_run_succeeded: false,
             status_text: "Ready".into(),
             input_text: String::new(),
-            recent_runs: Vec::new(),
+            history: history::History::load("logs"),
+            queue: std::collections::VecDeque::new(),
+            preview: None,
+            running_id: None,
             hotel: None,
             hotel_known: false,
-            settings: settings::SettingsPage::new(),
+            settings: settings::SettingsPage::new(runtime.clone()),
             workspace: WorkspaceView {
                 root_path: store_root,
                 status: "Choose your nitro-assets folder".into(),
@@ -251,23 +324,48 @@ impl ProApp {
         self.status_text = "Ready".into();
     }
 
-    fn request_run(&mut self) {
-        let Some(operation) = self.selected else { return };
-        if self.is_running {
+    /// Run now (`After::Run`) or add to the queue, after the workspace / database confirmations.
+    fn request(&mut self, operation: &'static OperationDefinition, after: After) {
+        if after == After::Run && self.is_running {
             return;
         }
         if workspace_runtime::router().is_configured() && WORKSPACE_OPERATION_IDS.contains(&operation.id) {
-            self.dialog = Some(Dialog::Workspace(operation));
+            self.dialog = Some(Dialog::Workspace(operation, after));
             return;
         }
         if operation.is_destructive {
-            self.dialog = Some(Dialog::Destructive(operation));
+            self.dialog = Some(Dialog::Destructive(operation, after));
             return;
         }
-        self.start(operation);
+        self.confirmed(operation, after, Vec::new());
     }
 
-    fn start(&mut self, operation: &'static OperationDefinition) {
+    fn confirmed(&mut self, operation: &'static OperationDefinition, after: After, answers: Vec<String>) {
+        match after {
+            After::Run => self.start(operation, answers),
+            After::Queue => self.enqueue(operation, answers),
+        }
+    }
+
+    /// Adds a run to the queue; it starts right away when nothing is running.
+    fn enqueue(&mut self, operation: &'static OperationDefinition, answers: Vec<String>) {
+        self.queue.push_back(QueuedRun { operation, answers });
+        if self.is_running {
+            self.status_text = format!("Queued: {} ({} waiting)", operation.title, self.queue.len());
+        } else {
+            self.start_next_queued();
+        }
+    }
+
+    fn start_next_queued(&mut self) {
+        let Some(next) = self.queue.pop_front() else { return };
+        // Show the queued operation's page, so its prompts and output are in view.
+        self.page = Page::Category(next.operation.category);
+        self.selected = Some(next.operation);
+        self.start(next.operation, next.answers);
+    }
+
+    fn start(&mut self, operation: &'static OperationDefinition, answers: Vec<String>) {
         self.log.clear();
         self.has_finished_run = false;
         self.is_running = true;
@@ -275,7 +373,34 @@ impl ProApp {
         self.focus_input = true;
         self.events = None;
         // The repaint closure is installed on the first frame (it needs the egui context).
-        self.pending_start = Some(operation);
+        self.pending_start = Some((operation, answers));
+    }
+
+    /// Dropped SWFs: copied into SWFCompiler/import/<kind>/ and converted from there
+    /// (the converter's "(I) import folder" answer).
+    fn convert_dropped(&mut self, files: Vec<std::path::PathBuf>, kind: &str, extension: &str) {
+        let folder = std::path::Path::new("SWFCompiler").join("import").join(kind);
+        let mut copied = 0;
+        for file in &files {
+            if std::fs::create_dir_all(&folder).is_ok()
+                && std::fs::copy(file, folder.join(habbo_core::paths::file_name(file))).is_ok()
+            {
+                copied += 1;
+            }
+        }
+        let id = format!("tools.swf-{kind}-{}", extension.trim_start_matches('.'));
+        match catalog::find(&id) {
+            Some(operation) if copied > 0 => {
+                self.status_text = format!("Copied {copied} SWF file(s) into {}", folder.display());
+                if workspace_runtime::router().is_configured() && WORKSPACE_OPERATION_IDS.contains(&operation.id) {
+                    // Ask as usual; the source prompt is then answered by hand.
+                    self.dialog = Some(Dialog::Workspace(operation, After::Queue));
+                } else {
+                    self.enqueue(operation, vec!["I".into()]);
+                }
+            }
+            _ => self.status_text = format!("Could not copy the dropped files into {}", folder.display()),
+        }
     }
 
     fn drain_events(&mut self) {
@@ -307,8 +432,24 @@ impl ProApp {
             } else {
                 format!("{title} failed: {}", result.error.unwrap_or_default())
             };
-            self.recent_runs.insert(0, RunHistoryItem { title, succeeded: result.succeeded, finished_at: result.finished_at });
-            self.recent_runs.truncate(8);
+            let id = self.running_id.unwrap_or("operation");
+            let log_text = self.log.text().to_string();
+            if let Err(error) =
+                self.history.record(id, title, result.succeeded, result.cancelled, result.finished_at, result.elapsed, &log_text)
+            {
+                self.status_text = format!("{} (the run log could not be saved: {error})", self.status_text);
+            }
+
+            // The queue goes on after a success; a failure or a cancel stops it.
+            if !self.queue.is_empty() {
+                if result.succeeded {
+                    self.start_next_queued();
+                } else {
+                    let waiting = self.queue.len();
+                    self.queue.clear();
+                    self.status_text = format!("{} - queue stopped, {waiting} run(s) dropped", self.status_text);
+                }
+            }
         }
     }
 
@@ -378,12 +519,13 @@ impl ProApp {
 // Fields used only to hand data between frames.
 impl ProApp {
     fn take_pending_start(&mut self, ctx: &egui::Context) {
-        if let Some(operation) = self.pending_start.take() {
+        if let Some((operation, answers)) = self.pending_start.take() {
             let ctx = ctx.clone();
             let wake: Arc<dyn Fn() + Send + Sync> =
                 Arc::new(move || ctx.request_repaint_after(std::time::Duration::from_millis(100)));
             self.running_title = Some(operation.title);
-            self.events = Some(self.runner.start(operation, wake));
+            self.running_id = Some(operation.id);
+            self.events = Some(self.runner.start(operation, answers, wake));
         }
     }
 }

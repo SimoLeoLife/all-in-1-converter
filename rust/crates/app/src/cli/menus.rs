@@ -46,6 +46,11 @@ the current Flash client build directory name (e.g. \"PRODUCTION-...\").\n\
 Useful to check whether the official Habbo assets have rotated since\n\
 your last download pass.",
         ),
+        MenuItem::op("update", "Check for updates", "general.update").help(
+            "Looks for a newer release of the Rust converter on GitHub (config.ini
+update_repo, default SimoLeoLife/all-in-1-converter) and installs it after
+asking. The previous exe is kept as .old until the next start.",
+        ),
         MenuItem::op("credits", "Credits & contributors", "general.credits").help(
             "Prints the authors and contributors of the tool: Life\n\
 (.NET 11, strict JSON-only migration, Professional UI),\n\

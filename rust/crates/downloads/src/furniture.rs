@@ -8,7 +8,7 @@ use futures::TryStreamExt;
 use habbo_core::paths::{hof_furni, HabboAssetFolder};
 use habbo_core::{outln, settings, Color};
 
-use crate::asset_downloader::{self, is_png, save, try_get, MAX_PARALLEL_DOWNLOADS};
+use crate::asset_downloader::{self, is_png, try_fetch};
 use crate::common::{self, log, parse_int_strict};
 use crate::xml::Document;
 
@@ -109,7 +109,7 @@ pub async fn download_furniture() -> Result<()> {
 
     let icon_count = AtomicUsize::new(0);
     futures::stream::iter(entries.iter().map(Ok::<_, anyhow::Error>))
-        .try_for_each_concurrent(MAX_PARALLEL_DOWNLOADS, |(classname, revision)| {
+        .try_for_each_concurrent(common::download_parallelism(), |(classname, revision)| {
             let icon_count = &icon_count;
             let furniture_url = &furniture_url;
             async move {
@@ -118,11 +118,13 @@ pub async fn download_furniture() -> Result<()> {
                 if icon_path.is_file() {
                     return Ok(());
                 }
-                if let Some(icon) = try_get(&format!("{furniture_url}/{revision}/{icon_name}_icon.png")).await {
-                    if is_png(&icon) {
-                        save(&icon_path, &icon)?;
+                if let Some(part) = try_fetch(&format!("{furniture_url}/{revision}/{icon_name}_icon.png"), &icon_path).await {
+                    if is_png(&part.read()?) {
+                        part.commit()?;
                         icon_count.fetch_add(1, Ordering::SeqCst);
                         log(Color::Green, &format!("Downloaded: {icon_name}_icon.png"));
+                    } else {
+                        let _ = part.discard();
                     }
                 }
                 Ok(())

@@ -89,10 +89,13 @@ pub struct SettingsPage {
     dirty: bool,
     result: (String, Tone),
     cdn_open: bool,
+    runtime: tokio::runtime::Handle,
+    test: Option<std::sync::mpsc::Receiver<Result<String, String>>>,
+    test_result: Option<Result<String, String>>,
 }
 
 impl SettingsPage {
-    pub fn new() -> Self {
+    pub fn new(runtime: tokio::runtime::Handle) -> Self {
         let mut page = Self {
             file: None,
             values: Vec::new(),
@@ -102,6 +105,9 @@ impl SettingsPage {
             dirty: false,
             result: (String::new(), Tone::Muted),
             cdn_open: false,
+            runtime,
+            test: None,
+            test_result: None,
         };
         page.reload();
         page
@@ -389,6 +395,49 @@ impl SettingsPage {
                     });
                 });
                 ui.add_space(6.0);
+            }
+            if title == "Database" {
+                self.connection_test_row(ui, palette);
+            }
+        });
+    }
+
+    /// "Test connection" with the values typed on the page (saved or not).
+    fn connection_test_row(&mut self, ui: &mut egui::Ui, palette: &Palette) {
+        if let Some(receiver) = &self.test {
+            if let Ok(result) = receiver.try_recv() {
+                self.test_result = Some(result);
+                self.test = None;
+            } else {
+                ui.ctx().request_repaint_after(std::time::Duration::from_millis(200));
+            }
+        }
+        ui.horizontal(|ui| {
+            fixed_column(ui, 240.0, |_| {});
+            let testing = self.test.is_some();
+            if ui.add_enabled(!testing, super::widgets::secondary_button("Test connection")).clicked() {
+                let value = |key: &str| {
+                    all_fields().position(|f| f.key == key).map(|i| self.values[i].trim().to_string()).unwrap_or_default()
+                };
+                let (server, port, user, password, database) =
+                    (value("DATABASESERVER"), value("DATABASEPORT"), value("DATABASEUSER"), value("DATABASEPASSWORD"), value("DATABASENAME"));
+                let (sender, receiver) = std::sync::mpsc::channel();
+                self.runtime.spawn(async move {
+                    let result = habbo_db::test_connection(&server, &port, &user, &password, &database).await;
+                    let _ = sender.send(result.map_err(|e| format!("{e:#}")));
+                });
+                self.test = Some(receiver);
+                self.test_result = None;
+            }
+            if testing {
+                ui.spinner();
+                ui.label(RichText::new("Connecting…").size(12.5).color(palette.muted));
+            } else if let Some(result) = &self.test_result {
+                let (text, color) = match result {
+                    Ok(text) => (format!("✅ {text}"), palette.success_text),
+                    Err(error) => (format!("❌ {error}"), palette.error_text),
+                };
+                ui.add(egui::Label::new(RichText::new(text).size(12.5).color(color)).wrap());
             }
         });
     }

@@ -15,13 +15,15 @@ use habbo_core::{outln, settings, Color};
 use rayon::prelude::*;
 
 use crate::common::{self, log};
+use crate::resume;
 
-pub const MAX_PARALLEL_DOWNLOADS: usize = 8;
+/// `HabboAssetDownloader.Http`'s timeout.
+pub const HTTP_TIMEOUT: Duration = Duration::from_secs(120);
 
 /// `HabboAssetDownloader.Http`: 2 minute timeout.
 pub fn http() -> &'static reqwest::Client {
     static CLIENT: OnceLock<reqwest::Client> = OnceLock::new();
-    common::client_with_timeout(&CLIENT, Duration::from_secs(120))
+    common::client_with_timeout(&CLIENT, HTTP_TIMEOUT)
 }
 
 #[derive(Debug, Default)]
@@ -42,11 +44,12 @@ pub async fn prepare_folder(folder: HabboAssetFolder) -> Result<()> {
     tokio::task::spawn_blocking(move || move_old_layout(folder)).await?
 }
 
-/// Downloads every library ("name", "url without extension") in the configured formats.
+/// Downloads every library ("name", "url without extension") in the configured formats,
+/// config.ini `download_parallelism` at a time (the C# code used 8).
 pub async fn download_libraries(folder: HabboAssetFolder, libraries: Vec<(String, String)>) -> Result<Counts> {
     let counts = Counts::default();
     futures::stream::iter(libraries.into_iter().map(Ok::<_, anyhow::Error>))
-        .try_for_each_concurrent(MAX_PARALLEL_DOWNLOADS, |(name, base_url)| {
+        .try_for_each_concurrent(common::download_parallelism(), |(name, base_url)| {
             let counts = &counts;
             async move { download_library(folder, &name, &base_url, counts).await }
         })
@@ -58,11 +61,13 @@ pub async fn download_library(folder: HabboAssetFolder, name: &str, base_url: &s
     if settings::download_swf() {
         let swf_path = folder.swf().join(format!("{name}.swf"));
         if !swf_path.is_file() {
-            if let Some(swf) = try_get(&format!("{base_url}.swf")).await {
-                if is_swf(&swf) {
-                    save(&swf_path, &swf)?;
+            if let Some(part) = try_fetch(&format!("{base_url}.swf"), &swf_path).await {
+                if is_swf(&part.read()?) {
+                    part.commit()?;
                     counts.swf.fetch_add(1, Ordering::SeqCst);
                     log(Color::Green, &format!("Downloaded: {name}.swf"));
+                } else {
+                    let _ = part.discard();
                 }
             }
         }
@@ -71,15 +76,22 @@ pub async fn download_library(folder: HabboAssetFolder, name: &str, base_url: &s
     if settings::download_hab() {
         let hab_path = folder.hab().join(format!("{name}.hab"));
         if !hab_path.is_file() {
-            if let Some(hab) = try_get(&format!("{base_url}.hab")).await {
+            if let Some(part) = try_fetch(&format!("{base_url}.hab"), &hab_path).await {
+                let hab = part.read()?;
                 if habbo_nitro::hab::is_hab(&hab) {
+                    // The download is in memory: save_hab writes the converted file through the
+                    // same .part (still locked by `part`) and renames it.
                     let name = name.to_string();
                     let saved = tokio::task::spawn_blocking(move || save_hab(&hab_path, &name, &hab)).await?;
                     if saved {
                         counts.hab.fetch_add(1, Ordering::SeqCst);
+                        drop(part);
                     } else {
                         counts.failed.fetch_add(1, Ordering::SeqCst);
+                        let _ = part.discard();
                     }
+                } else {
+                    let _ = part.discard();
                 }
             }
         }
@@ -171,13 +183,14 @@ fn move_old_layout(folder: HabboAssetFolder) -> Result<()> {
     })
 }
 
-/// The body of a successful response, or None (missing asset, network error).
-pub async fn try_get(url: &str) -> Option<Vec<u8>> {
-    let response = common::send(http(), url).await.ok()?;
-    if !response.status().is_success() {
-        return None;
+/// The body of a successful response in `<target>.part` (resumed when an earlier run left one),
+/// or None (missing asset, network error: what arrived stays in the .part for the next run).
+pub async fn try_fetch(url: &str, target: &Path) -> Option<resume::PartFile> {
+    let options = resume::Options { timeout: Some(HTTP_TIMEOUT), create_dir: false, resume: true };
+    match resume::fetch(|| http().get(url), target, &options).await {
+        Ok(resume::Fetched::Done(part)) => Some(part),
+        _ => None,
     }
-    common::body(response).await.ok()
 }
 
 /// Writes next to the target first, so a stopped run never leaves half a file that counts as downloaded.

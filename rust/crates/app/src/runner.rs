@@ -102,10 +102,20 @@ impl OperationRunner {
 
     /// Starts the operation on the runtime; events arrive on the returned channel.
     /// `wake` is called whenever an event is queued (the window repaints).
-    pub fn start(&self, operation: &'static OperationDefinition, wake: Arc<dyn Fn() + Send + Sync>) -> mpsc::Receiver<RunnerEvent> {
+    /// `answers` are queued before the run starts: prompts read them first, in order (a queued
+    /// or dropped-file run answers its own "(H) or (I)" question this way).
+    pub fn start(
+        &self,
+        operation: &'static OperationDefinition,
+        answers: Vec<String>,
+        wake: Arc<dyn Fn() + Send + Sync>,
+    ) -> mpsc::Receiver<RunnerEvent> {
         let (sender, receiver) = mpsc::channel();
         let input = self.input.clone();
         input.reset();
+        for answer in answers {
+            input.submit(answer);
+        }
         let finished_sender = sender.clone();
         let finished_wake = wake.clone();
         let running = self.running.clone();
@@ -204,7 +214,7 @@ mod tests {
 
         // A long download-like wait.
         let sleeper = op("test.sleep", || async { tokio::time::sleep(Duration::from_secs(60)).await; Ok(()) }.boxed());
-        let events = runner.start(sleeper, wake.clone());
+        let events = runner.start(sleeper, vec![], wake.clone());
         std::thread::sleep(Duration::from_millis(200));
         runner.cancel();
         let result = finish(&events);
@@ -218,7 +228,7 @@ mod tests {
             Ok(())
         }
         .boxed());
-        let events = runner.start(asker, wake.clone());
+        let events = runner.start(asker, vec![], wake.clone());
         std::thread::sleep(Duration::from_millis(200));
         runner.cancel();
         assert!(finish(&events).cancelled);
@@ -230,9 +240,13 @@ mod tests {
             Ok(())
         }
         .boxed());
-        let events = runner.start(echo, wake);
+        let events = runner.start(echo, vec![], wake.clone());
         std::thread::sleep(Duration::from_millis(100));
         runner.submit_input("42".into());
+        assert!(finish(&events).succeeded);
+
+        // Pre-filled answers.
+        let events = runner.start(echo, vec!["42".into()], wake);
         assert!(finish(&events).succeeded);
     }
 }

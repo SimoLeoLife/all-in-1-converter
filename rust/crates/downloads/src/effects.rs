@@ -11,6 +11,7 @@ use serde_json::{json, Map, Value};
 
 use crate::asset_downloader;
 use crate::common::{self, colored, parse_double, parse_int, parse_int_strict, FetchError};
+use crate::resume;
 use crate::jsonw::{to_string_indented, Escaping};
 use crate::xml::{Document, Element};
 
@@ -344,15 +345,7 @@ fn generate_avatar_actions_json_from_xml(avatar_actions_file_path: &str) {
 
 /// `DownloadFileAsync`: an HTTP failure means "custom" and is skipped; other errors escape.
 async fn download_file(url: &str, file_path: &str, file_name: &str) -> Result<()> {
-    let result: Result<(), FetchError> = async {
-        let bytes = common::get_bytes(common::default_client(), url).await?;
-        if let Some(directory) = Path::new(file_path).parent() {
-            std::fs::create_dir_all(directory)?;
-        }
-        std::fs::write(file_path, bytes)?;
-        Ok(())
-    }
-    .await;
+    let result: Result<(), FetchError> = resume::download_to(common::default_client(), url, Path::new(file_path), &resume::Options { create_dir: true, ..resume::Options::FRESH }).await;
     match result {
         Ok(()) => {
             colored(Color::Green, &format!("📥 Downloaded: {file_name}"));

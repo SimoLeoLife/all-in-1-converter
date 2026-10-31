@@ -26,6 +26,7 @@ pub mod pets;
 pub mod productdata;
 pub mod quests;
 pub mod reception;
+pub mod resume;
 pub mod variables;
 pub mod version;
 pub mod xml;

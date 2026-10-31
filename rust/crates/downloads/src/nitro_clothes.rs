@@ -2,14 +2,17 @@
 //! FigureData.json and every clothes .nitro into custom_downloads/clothes (or the Asset
 //! Workspace clothing folder).
 
-use std::path::Path;
+use std::collections::HashSet;
+use std::path::{Path, PathBuf};
 
 use anyhow::{anyhow, Result};
-use habbo_core::workspace::{self, runtime, WorkspaceAssetKind};
+use futures::StreamExt;
+use habbo_core::workspace::{runtime, WorkspaceAssetKind};
 use habbo_core::{console, outln, Color};
 use serde_json::Value;
 
 use crate::common::{self, colored, FetchError, NULL_REFERENCE};
+use crate::resume::{self, PartFile};
 
 const NITRO_CLOTHES_DIR_KEY: &str = "AppSettings:nitro_clothes_dir";
 const NITRO_FIGURE_DATA_KEY: &str = "AppSettings:nitro_figuredata";
@@ -81,20 +84,51 @@ pub async fn download_custom_clothes() -> Result<()> {
             }
             let libraries = library_list(&figure_map)?;
 
+            // Not in the C# version: config.ini download_parallelism files are fetched at once, but
+            // every library is handled in order (same messages, same counts) like the one-by-one loop.
+            let mut seen = HashSet::new();
+            let steps: Vec<Result<(String, PathBuf, bool)>> = libraries
+                .iter()
+                .map(|library| {
+                    let id = token_text(library.get("id"))?;
+                    let file_path = download_directory.join(format!("{id}.nitro"));
+                    let first = seen.insert(common::path_key(&file_path));
+                    Ok((id, file_path, first))
+                })
+                .collect();
+            let client = common::default_client();
+            let nitro_clothes_dir = &nitro_clothes_dir;
+            let results = futures::stream::iter(steps)
+                .map(|step| async move {
+                    let fetched = match &step {
+                        Ok((id, file_path, true)) if !is_skipped_library(id) && !file_path.is_file() => {
+                            Some(fetch(client, nitro_clothes_dir, id, file_path).await)
+                        }
+                        _ => None,
+                    };
+                    (step, fetched)
+                })
+                .buffered(common::download_parallelism());
+            let mut results = std::pin::pin!(results);
+
             let (mut processed, mut downloaded, mut skipped) = (0, 0, 0);
-            for library in libraries {
-                let id = token_text(library.get("id"))?;
+            while let Some((step, fetched)) = results.next().await {
+                let (id, file_path, first) = step?;
                 processed += 1;
-                if id == "hh_human_fx" || id == "hh_pets" {
+                if is_skipped_library(&id) {
                     continue;
                 }
-                let file_path = download_directory.join(format!("{id}.nitro"));
-                if file_path.is_file() {
-                    skipped += 1;
-                    continue;
-                }
-                let url = format!("{nitro_clothes_dir}/{id}.nitro");
-                match download_file(&url, &file_path, &format!("{id}.nitro")).await {
+                let fetched = match fetched {
+                    Some(fetched) => fetched,
+                    // Already there (or saved by an earlier library with the same id).
+                    None if first || file_path.is_file() => {
+                        skipped += 1;
+                        continue;
+                    }
+                    // An earlier library with the same id failed: try again, like the C# loop.
+                    None => fetch(client, nitro_clothes_dir, &id, &file_path).await,
+                };
+                match finish(fetched, &format!("{id}.nitro")) {
                     Ok(()) => {
                         colored(Color::Green, &format!("Downloaded: {id}.nitro"));
                         downloaded += 1;
@@ -137,13 +171,28 @@ pub async fn download_custom_clothes() -> Result<()> {
     Ok(())
 }
 
-async fn download_file(url: &str, file_path: &Path, file_name: &str) -> Result<(), FetchError> {
-    let result: Result<(), FetchError> = async {
-        let content = common::get_bytes(common::default_client(), url).await?;
-        workspace::write_output(file_path, &content)?;
-        Ok(())
+fn is_skipped_library(id: &str) -> bool {
+    id == "hh_human_fx" || id == "hh_pets"
+}
+
+async fn fetch(client: &reqwest::Client, nitro_clothes_dir: &str, id: &str, file_path: &Path) -> Result<PartFile, FetchError> {
+    let url = format!("{nitro_clothes_dir}/{id}.nitro");
+    resume::fetch_ok(|| client.get(&url), file_path, &resume::Options::default()).await
+}
+
+/// The end of `DownloadFileAsync`: the .part goes through the workspace output, and HTTP failures are printed.
+fn finish(fetched: Result<PartFile, FetchError>, file_name: &str) -> Result<(), FetchError> {
+    let result = fetched.and_then(|part| part.commit_to_workspace().map_err(FetchError::from));
+    match &result {
+        Ok(()) => colored(Color::Green, &format!("Downloaded: {file_name}")),
+        Err(FetchError::Http(message)) => colored(Color::Red, &format!("Error downloading {file_name}: {message}")),
+        Err(FetchError::Other(_)) => {}
     }
-    .await;
+    result
+}
+
+async fn download_file(url: &str, file_path: &Path, file_name: &str) -> Result<(), FetchError> {
+    let result: Result<(), FetchError> = resume::download_to_workspace(common::default_client(), url, file_path, &resume::Options::FRESH).await;
     match &result {
         Ok(()) => colored(Color::Green, &format!("Downloaded: {file_name}")),
         Err(FetchError::Http(message)) => colored(Color::Red, &format!("Error downloading {file_name}: {message}")),

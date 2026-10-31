@@ -74,7 +74,7 @@ pub fn client_with_timeout(slot: &'static OnceLock<reqwest::Client>, timeout: Du
     })
 }
 
-fn map_reqwest(error: reqwest::Error, timeout: Option<Duration>) -> FetchError {
+pub(crate) fn map_reqwest(error: reqwest::Error, timeout: Option<Duration>) -> FetchError {
     if error.is_timeout() {
         let seconds = timeout.map(|t| t.as_secs()).unwrap_or(100);
         return FetchError::Other(anyhow::anyhow!(
@@ -260,6 +260,36 @@ pub fn cfg(config: &HashMap<String, String>, key: &str) -> anyhow::Result<String
         .ok_or_else(|| anyhow::anyhow!("The given key '{key}' was not present in the dictionary."))
 }
 
+/// The default of config.ini `download_parallelism`.
+pub const DEFAULT_DOWNLOAD_PARALLELISM: usize = 16;
+/// The largest config.ini `download_parallelism` taken.
+pub const MAX_DOWNLOAD_PARALLELISM: usize = 64;
+
+/// config.ini `download_parallelism` (not in the C# version): how many files the downloaders of
+/// many small files fetch at once. Missing or not a number: 16; clamped to 1..=64.
+pub fn parse_download_parallelism(value: Option<&str>) -> usize {
+    match value.map(str::trim).and_then(|v| v.parse::<i64>().ok()) {
+        Some(n) => n.clamp(1, MAX_DOWNLOAD_PARALLELISM as i64) as usize,
+        None => DEFAULT_DOWNLOAD_PARALLELISM,
+    }
+}
+
+/// [`parse_download_parallelism`] of the current config.ini.
+pub fn download_parallelism() -> usize {
+    parse_download_parallelism(habbo_core::settings::read_setting("download_parallelism").as_deref())
+}
+
+/// The key that tells two paths of this run apart the way the file system does (Windows
+/// ignores case), for downloaders that must not fetch one file twice at once.
+pub fn path_key(path: &Path) -> String {
+    let text = path.to_string_lossy().replace('\\', "/");
+    if cfg!(windows) {
+        text.to_lowercase()
+    } else {
+        text
+    }
+}
+
 /// `IniFileParser.Parse("config.ini")`.
 pub fn load_config() -> anyhow::Result<HashMap<String, String>> {
     habbo_core::ini::parse("config.ini")
@@ -416,6 +446,29 @@ mod tests {
         assert_eq!(release_from_line_drop_last("flash.client.url=a/b/"), Some(Err(2)));
         assert_eq!(release_from_line_drop_last("nothing"), None);
         assert_eq!(release_trim_end("flash.client.url=a/b/"), None);
+    }
+
+    #[test]
+    fn download_parallelism_setting() {
+        assert_eq!(parse_download_parallelism(None), 16);
+        assert_eq!(parse_download_parallelism(Some("")), 16);
+        assert_eq!(parse_download_parallelism(Some("abc")), 16);
+        assert_eq!(parse_download_parallelism(Some("4.5")), 16);
+        assert_eq!(parse_download_parallelism(Some(" 24 ")), 24);
+        assert_eq!(parse_download_parallelism(Some("1")), 1);
+        assert_eq!(parse_download_parallelism(Some("0")), 1);
+        assert_eq!(parse_download_parallelism(Some("-3")), 1);
+        assert_eq!(parse_download_parallelism(Some("64")), 64);
+        assert_eq!(parse_download_parallelism(Some("1000")), 64);
+        assert_eq!(parse_download_parallelism(Some("99999999999999999999")), 16);
+    }
+
+    #[test]
+    fn path_keys() {
+        assert_eq!(path_key(Path::new("a/b.png")), path_key(Path::new("a\\b.png")));
+        if cfg!(windows) {
+            assert_eq!(path_key(Path::new("A/B.png")), path_key(Path::new("a/b.PNG")));
+        }
     }
 
     #[test]

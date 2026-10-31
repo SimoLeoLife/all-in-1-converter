@@ -7,6 +7,7 @@ use habbo_core::Color;
 use serde_json::{Map, Value};
 
 use crate::common::{self, colored, FetchError};
+use crate::resume;
 use crate::jsonw::{to_string_indented, Escaping};
 
 /// `key=value` lines -> an ordered map (blank and `#` lines skipped, later keys overwrite in place).
@@ -68,15 +69,7 @@ fn convert_texts_to_json(txt_path: &str) {
 
 /// `DownloadFileAsync` (prints, then rethrows an HTTP failure).
 pub(crate) async fn download_file(url: &str, file_path: &str, file_name: &str) -> Result<(), FetchError> {
-    let result: Result<(), FetchError> = async {
-        let bytes = common::get_bytes(common::default_client(), url).await?;
-        if let Some(directory) = Path::new(file_path).parent() {
-            std::fs::create_dir_all(directory)?;
-        }
-        std::fs::write(file_path, bytes)?;
-        Ok(())
-    }
-    .await;
+    let result: Result<(), FetchError> = resume::download_to(common::default_client(), url, Path::new(file_path), &resume::Options { create_dir: true, ..resume::Options::FRESH }).await;
     match &result {
         Ok(()) => colored(Color::Green, &format!("Downloaded: {file_name}")),
         Err(FetchError::Http(message)) => colored(Color::Red, &format!("Error downloading {file_name}: {message}")),

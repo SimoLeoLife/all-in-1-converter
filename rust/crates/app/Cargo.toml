@@ -29,6 +29,8 @@ image = { workspace = true, features = ["ico"] }
 indexmap = "2"
 rfd.workspace = true
 crossterm.workspace = true
+serde.workspace = true
+serde_json.workspace = true
 
 [target.'cfg(windows)'.dependencies]
 windows-sys = { version = "0.59", features = ["Win32_System_Console"] }
@@ -39,3 +41,6 @@ libc = "0.2"
 [build-dependencies]
 zip = { workspace = true }
 embed-resource = "3"
+
+[dev-dependencies]
+tempfile.workspace = true

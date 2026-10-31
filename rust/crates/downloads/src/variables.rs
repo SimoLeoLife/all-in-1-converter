@@ -7,6 +7,7 @@ use anyhow::Result;
 use habbo_core::Color;
 
 use crate::common::{self, colored, FetchError};
+use crate::resume;
 use crate::flash_texts::key_values_json;
 
 /// `VariablesDownloader.DownloadVariablesAsync`.
@@ -74,11 +75,7 @@ fn convert_variables_to_json(txt_path: &Path) {
 }
 
 async fn download_file(url: &str, file_path: &Path, file_name: &str) -> Result<(), FetchError> {
-    let bytes = common::get_bytes(common::default_client(), url).await?;
-    if let Some(directory) = file_path.parent() {
-        std::fs::create_dir_all(directory)?;
-    }
-    std::fs::write(file_path, bytes)?;
+    resume::download_to(common::default_client(), url, file_path, &resume::Options { create_dir: true, ..resume::Options::FRESH }).await?;
     colored(Color::Green, &format!("Downloaded: {file_name}"));
     Ok(())
 }

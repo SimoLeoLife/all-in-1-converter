@@ -17,6 +17,7 @@ use sha2::{Digest, Sha256};
 
 use crate::asset_downloader::{is_png, save};
 use crate::common::{self, log, FetchError};
+use crate::resume;
 
 pub const BUNDLE_NAME: &str = "habbo-inventory-com.hab";
 const ZIP_ASAR_PATH: &str = "resources/app.asar";
@@ -164,19 +165,14 @@ async fn download_source(url: &str) -> Result<Option<PathBuf>> {
         return Ok(Some(earlier));
     }
 
-    let mut temp = path.as_os_str().to_owned();
-    temp.push(".part");
-    let temp = PathBuf::from(temp);
-
     let result: Result<Option<PathBuf>, FetchError> = async {
         log(Color::Blue, &format!("Downloading {uri}..."));
-        let response = common::send_with(download_client().get(uri.clone()), Some(DOWNLOAD_TIMEOUT)).await?;
-        common::ensure_success(&response)?;
-        let bytes = common::body(response).await?;
-        std::fs::write(&temp, bytes)?;
+        // Streamed into <file>.part; an interrupted download is resumed by the next run.
+        let options = resume::Options { timeout: Some(DOWNLOAD_TIMEOUT), create_dir: false, resume: true };
+        let part = resume::fetch_ok(|| download_client().get(uri.clone()), &path, &options).await?;
 
-        let Some(kind) = detect_kind(&temp)? else {
-            std::fs::remove_file(&temp)?;
+        let Some(kind) = detect_kind(part.part())? else {
+            part.discard()?;
             log(Color::Red, "The download is not a zip, app.asar, .hab or PNG file.");
             return Ok(None);
         };
@@ -187,7 +183,7 @@ async fn download_source(url: &str) -> Result<Option<PathBuf>> {
             with_kind.push(kind);
             path = PathBuf::from(with_kind);
         }
-        std::fs::rename(&temp, &path)?;
+        part.commit_to(&path)?;
         log(Color::Green, &format!("Downloaded {}.", path.display()));
         Ok(Some(path.clone()))
     }
@@ -196,9 +192,7 @@ async fn download_source(url: &str) -> Result<Option<PathBuf>> {
     match result {
         Ok(path) => Ok(path),
         Err(error) => {
-            if temp.is_file() {
-                std::fs::remove_file(&temp)?;
-            }
+            // What arrived stays in the .part: the next run resumes it.
             log(Color::Red, &format!("Could not download {uri}: {error}"));
             Ok(None)
         }

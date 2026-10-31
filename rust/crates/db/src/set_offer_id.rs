@@ -273,6 +273,11 @@ pub async fn run() -> Result<()> {
 
     outln!("🔄 {} catalog_items need offer_id updates.", items_to_update.len());
 
+    // New behaviour (not in the C# tool): back up catalog_items first; no backup, no changes.
+    if !crate::backup::backup_before_change(&["catalog_items"], "set_offer_id").await {
+        return Ok(());
+    }
+
     let batches = partition(&items_to_update, 100);
     let total_batches = batches.len();
     let timer = ProgressTimer::start(total_batches);

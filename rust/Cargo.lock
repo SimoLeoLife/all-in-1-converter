@@ -1596,7 +1596,7 @@ dependencies = [
 
 [[package]]
 name = "habbo-app"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "anyhow",
  "chrono",
@@ -1617,6 +1617,9 @@ dependencies = [
  "libc",
  "reqwest",
  "rfd",
+ "serde",
+ "serde_json",
+ "tempfile",
  "tokio",
  "windows-sys 0.59.0",
  "zip",
@@ -1624,7 +1627,7 @@ dependencies = [
 
 [[package]]
 name = "habbo-core"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "anyhow",
  "chrono",
@@ -1640,7 +1643,7 @@ dependencies = [
 
 [[package]]
 name = "habbo-db"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "anyhow",
  "base64 0.22.1",
@@ -1661,7 +1664,7 @@ dependencies = [
 
 [[package]]
 name = "habbo-downloads"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "anyhow",
  "futures",
@@ -1681,7 +1684,7 @@ dependencies = [
 
 [[package]]
 name = "habbo-figure"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "anyhow",
  "futures",
@@ -1698,7 +1701,7 @@ dependencies = [
 
 [[package]]
 name = "habbo-furni"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "anyhow",
  "futures",
@@ -1714,7 +1717,7 @@ dependencies = [
 
 [[package]]
 name = "habbo-nitro"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "anyhow",
  "base64 0.22.1",
@@ -1731,7 +1734,7 @@ dependencies = [
 
 [[package]]
 name = "habbo-swf"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "anyhow",
  "flate2",
@@ -1744,7 +1747,7 @@ dependencies = [
 
 [[package]]
 name = "habbo-tools"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "anyhow",
  "habbo-core",

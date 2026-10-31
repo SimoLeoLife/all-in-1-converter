@@ -44,9 +44,21 @@ pub fn tick(app: &mut ProApp, ctx: &egui::Context) {
             app.log.append("⚡ [   10/40] (25.0%) |  10.8 items/sec | Converted: 10\n");
             // Shown as running (no real task behind it).
             app.is_running = true;
+            for id in ["tools.swf-clothes-hab", "tools.generate-sql"] {
+                app.queue.push_back(super::QueuedRun { operation: catalog::get(id), answers: vec![] });
+            }
+        }
+        if let Ok(bundle) = std::env::var("HABBO_SCREENSHOT_BUNDLE") {
+            match super::preview::BundlePreview::open(ctx, std::path::Path::new(&bundle)) {
+                Ok(preview) => app.preview = Some(preview),
+                Err(error) => eprintln!("preview: {error:#}"),
+            }
+        }
+        if page == "drop" {
+            app.dialog = Some(super::Dialog::DroppedSwf(vec!["a.swf".into(), "b.swf".into()]));
         }
         if page == "confirm" {
-            app.dialog = Some(super::Dialog::Destructive(catalog::get("database.optimize")));
+            app.dialog = Some(super::Dialog::Destructive(catalog::get("database.optimize"), super::After::Run));
         }
     }
 

@@ -207,8 +207,15 @@ async fn update_database_sprite_ids(furniture_data: &HashMap<String, i32>) {
         })
         .collect();
 
+    // New behaviour (not in the C# tool): both tables are backed up right before the first
+    // change; if the backup fails nothing is changed.
+    let mut backed_up = false;
+
     if !items_to_update.is_empty() {
         outln!("🔄 {} items need sprite_id updates.", items_to_update.len());
+        if !backup_once(&mut backed_up).await {
+            return;
+        }
         update_sprite_ids(&items_to_update).await;
     } else {
         outln!("✅ No sprite_id updates needed.");
@@ -226,11 +233,21 @@ async fn update_database_sprite_ids(furniture_data: &HashMap<String, i32>) {
 
     if !updates.is_empty() {
         outln!("🔄 {} catalog items need item_ids updates.", updates.len());
+        if !backup_once(&mut backed_up).await {
+            return;
+        }
         let pairs: Vec<(i32, String)> = updates.into_iter().map(|(id, new, _)| (id, new)).collect();
         update_catalog_item_ids(&pairs).await;
     } else {
         outln!("✅ No item_ids updates needed in catalog_items.");
     }
+}
+
+async fn backup_once(backed_up: &mut bool) -> bool {
+    if !*backed_up {
+        *backed_up = crate::backup::backup_before_change(&["items_base", "catalog_items"], "fix_sprite_id_settings").await;
+    }
+    *backed_up
 }
 
 pub(crate) fn sprite_id_batch_query(batch: &[(i32, i32)]) -> String {

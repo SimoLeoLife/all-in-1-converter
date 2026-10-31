@@ -8,7 +8,13 @@ enum Action {
     OpenOperation(&'static OperationDefinition),
     Select(&'static OperationDefinition),
     Run,
+    Queue,
+    ClearQueue,
     Cancel,
+    OpenBundle,
+    ClosePreview,
+    OpenLog(std::path::PathBuf),
+    DroppedSwf(&'static str, &'static str),
     Done,
     Submit,
     CopyLog,
@@ -20,6 +26,8 @@ enum Action {
     CancelDialog,
     OpenSwitch,
     Status(String),
+    InstallUpdate,
+    RestartUpdated,
 }
 
 impl eframe::App for ProApp {
@@ -29,6 +37,10 @@ impl eframe::App for ProApp {
         self.take_pending_start(ctx);
         self.drain_events();
         self.poll_workspace();
+        self.update.poll();
+        if self.update.checking.is_some() || self.update.installing.is_some() {
+            ctx.request_repaint_after(std::time::Duration::from_millis(250));
+        }
         if self.is_running || self.workspace.busy.is_some() {
             ctx.request_repaint_after(std::time::Duration::from_millis(100));
         }
@@ -45,7 +57,7 @@ impl eframe::App for ProApp {
             self.sidebar(ctx, &mut actions);
             self.footer(ctx);
             egui::CentralPanel::default().frame(egui::Frame::new().fill(Palette::current(ctx).surface)).show(ctx, |ui| {
-                self.header(ui);
+                self.header(ui, &mut actions);
                 match self.page {
                     Page::Dashboard => self.dashboard(ui, &mut actions),
                     Page::Workspace => self.workspace_page(ui, &mut actions),
@@ -62,6 +74,8 @@ impl eframe::App for ProApp {
                 }
             });
             self.dialog_ui(ctx, &mut actions);
+            self.preview_ui(ctx, &mut actions);
+            self.handle_dropped_files(ctx);
         }
 
         for action in actions {
@@ -85,7 +99,36 @@ impl ProApp {
                     self.selected = Some(operation);
                 }
             }
-            Action::Run => self.request_run(),
+            Action::Run => {
+                if let Some(operation) = self.selected {
+                    self.request(operation, After::Run);
+                }
+            }
+            Action::Queue => {
+                if let Some(operation) = self.selected {
+                    self.request(operation, After::Queue);
+                }
+            }
+            Action::ClearQueue => {
+                self.queue.clear();
+                self.status_text = "Queue cleared".into();
+            }
+            Action::OpenBundle => {
+                if let Some(file) = rfd::FileDialog::new().set_title("Open a .nitro or .hab bundle").add_filter("Bundles", &["nitro", "hab"]).pick_file() {
+                    self.open_preview(ctx, &file);
+                }
+            }
+            Action::ClosePreview => self.preview = None,
+            Action::OpenLog(path) => {
+                if let Err(error) = open_path(&path) {
+                    self.status_text = format!("Could not open {}: {error}", path.display());
+                }
+            }
+            Action::DroppedSwf(kind, extension) => {
+                if let Some(Dialog::DroppedSwf(files)) = self.dialog.take() {
+                    self.convert_dropped(files, kind, extension);
+                }
+            }
             Action::Cancel => {
                 if self.is_running {
                     self.runner.cancel();
@@ -138,18 +181,31 @@ impl ProApp {
                 }
             }
             Action::ConfirmDialog => match self.dialog.take() {
-                Some(Dialog::Workspace(operation)) => {
+                Some(Dialog::Workspace(operation, after)) => {
                     if operation.is_destructive {
-                        self.dialog = Some(Dialog::Destructive(operation));
+                        self.dialog = Some(Dialog::Destructive(operation, after));
                     } else {
-                        self.start(operation);
+                        self.confirmed(operation, after, Vec::new());
                     }
                 }
-                Some(Dialog::Destructive(operation)) => self.start(operation),
+                Some(Dialog::Destructive(operation, after)) => self.confirmed(operation, after, Vec::new()),
                 Some(Dialog::LeaveSettings(then)) => then(self),
-                Some(Dialog::SwitchInterface) | None => {}
+                Some(Dialog::SwitchInterface) | Some(Dialog::DroppedSwf(_)) | None => {}
             },
             Action::CancelDialog => self.dialog = None,
+            Action::InstallUpdate => {
+                if !self.is_running {
+                    self.update.install(&self.runtime);
+                }
+            }
+            Action::RestartUpdated => {
+                if let Some(exe) = &self.update.installed {
+                    match crate::update::restart(exe, &["--professional"]) {
+                        Ok(()) => ctx.send_viewport_cmd(egui::ViewportCommand::Close),
+                        Err(error) => self.status_text = format!("Could not restart: {error}"),
+                    }
+                }
+            }
             Action::Status(message) => {
                 self.status_text = message;
                 self.refresh_hotel();
@@ -203,7 +259,7 @@ impl ProApp {
             });
     }
 
-    fn header(&self, ui: &mut egui::Ui) {
+    fn header(&self, ui: &mut egui::Ui, actions: &mut Vec<Action>) {
         let palette = Palette::current(ui.ctx());
         let (title, subtitle) = self.title();
         egui::Frame::new().inner_margin(egui::Margin { left: 32, right: 32, top: 26, bottom: 20 }).show(ui, |ui| {
@@ -213,6 +269,7 @@ impl ProApp {
                     ui.label(RichText::new(subtitle).size(13.5).color(palette.muted));
                 });
                 ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                    self.update_banner(ui, &palette, actions);
                     let (text, back, fore) = if self.is_running {
                         ("Running", palette.info_back, palette.info_text)
                     } else if !self.has_finished_run {
@@ -307,8 +364,8 @@ impl ProApp {
                         }
                     });
                     card(&mut columns[1], &palette, egui::Margin::same(12), |ui| {
-                        card_heading(ui, &palette, "Recent activity", "Runs in this session");
-                        if self.recent_runs.is_empty() {
+                        card_heading(ui, &palette, "Recent activity", "Last runs; click one to open its log");
+                        if self.history.entries.is_empty() {
                             ui.vertical_centered(|ui| {
                                 ui.add_space(18.0);
                                 ui.label(RichText::new("🕓").size(26.0).color(palette.subtle));
@@ -316,16 +373,39 @@ impl ProApp {
                                 ui.add_space(18.0);
                             });
                         }
-                        for run in &self.recent_runs {
-                            ui.horizontal(|ui| {
-                                ui.add_space(12.0);
-                                dot(ui, if run.succeeded { palette.success_text } else { palette.error_text });
-                                ui.label(RichText::new(run.title).size(13.0));
-                                ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                        for run in self.history.entries.iter().take(8) {
+                            let response = ui
+                                .horizontal(|ui| {
                                     ui.add_space(12.0);
-                                    ui.label(RichText::new(run.finished_at.format("%H:%M").to_string()).size(12.0).color(palette.muted));
-                                });
-                            });
+                                    let color = if run.succeeded {
+                                        palette.success_text
+                                    } else if run.cancelled {
+                                        palette.warning_text
+                                    } else {
+                                        palette.error_text
+                                    };
+                                    dot(ui, color);
+                                    ui.label(RichText::new(&run.title).size(13.0));
+                                    ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                                        ui.add_space(12.0);
+                                        let when = run.finished_local().map_or_else(String::new, |t| {
+                                            if t.date_naive() == chrono::Local::now().date_naive() {
+                                                t.format("%H:%M").to_string()
+                                            } else {
+                                                t.format("%d/%m %H:%M").to_string()
+                                            }
+                                        });
+                                        ui.label(RichText::new(when).size(12.0).color(palette.muted));
+                                    });
+                                })
+                                .response
+                                .interact(egui::Sense::click());
+                            if response.hovered() {
+                                ui.ctx().set_cursor_icon(egui::CursorIcon::PointingHand);
+                            }
+                            if let (true, Some(log)) = (response.clicked(), &run.log_file) {
+                                actions.push(Action::OpenLog(log.clone()));
+                            }
                             ui.add_space(4.0);
                         }
                     });
@@ -545,6 +625,14 @@ impl ProApp {
             if ui.add_enabled(can_run, primary_button("▶  Run operation")).clicked() {
                 actions.push(Action::Run);
             }
+            if operation.is_some()
+                && ui
+                    .add(secondary_button("+ Add to queue"))
+                    .on_hover_text("Runs after the current operation (or now, when nothing runs)")
+                    .clicked()
+            {
+                actions.push(Action::Queue);
+            }
             if self.is_running && ui.add(secondary_button("⏹  Cancel")).clicked() {
                 actions.push(Action::Cancel);
             }
@@ -552,6 +640,22 @@ impl ProApp {
                 actions.push(Action::Done);
             }
         });
+
+        if !self.queue.is_empty() {
+            ui.add_space(8.0);
+            ui.horizontal_wrapped(|ui| {
+                ui.label(RichText::new(format!("QUEUE ({})", self.queue.len())).size(10.5).strong().color(palette.subtle));
+                for (index, run) in self.queue.iter().enumerate() {
+                    if index > 0 {
+                        ui.label(RichText::new("›").color(palette.subtle));
+                    }
+                    chip(ui, run.operation.title, palette.info_back, palette.info_text);
+                }
+                if ui.add(egui::Button::new(RichText::new("Clear").size(11.5)).corner_radius(6)).clicked() {
+                    actions.push(Action::ClearQueue);
+                }
+            });
+        }
 
         if self.is_running {
             ui.add_space(12.0);
@@ -581,6 +685,13 @@ impl ProApp {
             ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                 if ui.add(egui::Button::new(RichText::new("Copy output").size(12.0)).corner_radius(8)).clicked() {
                     actions.push(Action::CopyLog);
+                }
+                if ui
+                    .add(egui::Button::new(RichText::new("Open bundle…").size(12.0)).corner_radius(8))
+                    .on_hover_text("Look inside a .nitro or .hab (you can also drop one on the window)")
+                    .clicked()
+                {
+                    actions.push(Action::OpenBundle);
                 }
             });
         });
@@ -644,6 +755,40 @@ impl ProApp {
         let palette = Palette::current(ctx);
         let workspace_root = workspace_runtime::router().paths.as_ref().map(|p| p.root.display().to_string()).unwrap_or_default();
 
+        if let Dialog::DroppedSwf(files) = dialog {
+            let modal = egui::Modal::new(egui::Id::new("dropped")).show(ctx, |ui| {
+                ui.set_width(470.0);
+                ui.label(RichText::new(format!("Convert {} SWF file(s)", files.len())).size(18.0).strong());
+                ui.label(
+                    RichText::new("They are copied into SWFCompiler/import/<kind> and converted from there. What are they?")
+                        .size(13.0)
+                        .color(palette.muted),
+                );
+                ui.add_space(10.0);
+                for (kind, label) in [("furniture", "Furniture"), ("clothes", "Clothes"), ("pets", "Pets"), ("effects", "Effects")] {
+                    ui.horizontal(|ui| {
+                        ui.add_sized([110.0, 28.0], egui::Label::new(RichText::new(label).strong()));
+                        if ui.add(primary_button("to .hab")).clicked() {
+                            actions.push(Action::DroppedSwf(kind, ".hab"));
+                        }
+                        if ui.add(secondary_button("to .nitro")).clicked() {
+                            actions.push(Action::DroppedSwf(kind, ".nitro"));
+                        }
+                    });
+                }
+                ui.add_space(8.0);
+                ui.with_layout(egui::Layout::right_to_left(egui::Align::Min), |ui| {
+                    if ui.add(secondary_button("Cancel")).clicked() {
+                        actions.push(Action::CancelDialog);
+                    }
+                });
+            });
+            if modal.should_close() && actions.is_empty() {
+                actions.push(Action::CancelDialog);
+            }
+            return;
+        }
+
         if let Dialog::SwitchInterface = dialog {
             let modal = egui::Modal::new(egui::Id::new("switch")).show(ctx, |ui| {
                 ui.set_width(760.0);
@@ -656,7 +801,7 @@ impl ProApp {
         }
 
         let (heading, message, note, confirm, icon, fore, back) = match dialog {
-            Dialog::Workspace(operation) => (
+            Dialog::Workspace(operation, _) => (
                 operation.title.to_string(),
                 format!("This operation will interact with the configured Nitro workspace:\n{workspace_root}"),
                 "Existing files written by compatible operations are backed up automatically before replacement.",
@@ -665,7 +810,7 @@ impl ProApp {
                 palette.accent_text,
                 palette.accent_soft,
             ),
-            Dialog::Destructive(operation) => (
+            Dialog::Destructive(operation, _) => (
                 "Database change".to_string(),
                 format!("{} can modify your database.", operation.title),
                 "Confirm only if your configuration and backups are ready.",
@@ -683,7 +828,7 @@ impl ProApp {
                 palette.warning_text,
                 palette.warning_back,
             ),
-            Dialog::SwitchInterface => unreachable!(),
+            Dialog::SwitchInterface | Dialog::DroppedSwf(_) => unreachable!(),
         };
 
         let modal = egui::Modal::new(egui::Id::new("confirm")).show(ctx, |ui| {
@@ -894,4 +1039,128 @@ fn group_of(operation: &OperationDefinition) -> Option<&'static str> {
         }
     }
     None
+}
+
+// ---------------------------------------------------------------- bundle preview and dropped files
+
+impl ProApp {
+    fn open_preview(&mut self, ctx: &egui::Context, path: &std::path::Path) {
+        match preview::BundlePreview::open(ctx, path) {
+            Ok(preview) => self.preview = Some(preview),
+            Err(error) => self.status_text = format!("{error:#}"),
+        }
+    }
+
+    /// Files dropped on the window: a .nitro / .hab opens in the preview, .swf files are converted.
+    fn handle_dropped_files(&mut self, ctx: &egui::Context) {
+        let dropped: Vec<std::path::PathBuf> = ctx.input(|i| i.raw.dropped_files.iter().filter_map(|f| f.path.clone()).collect());
+        if dropped.is_empty() {
+            return;
+        }
+        let bundles: Vec<_> = dropped.iter().filter(|p| habbo_core::paths::has_ext(p, "nitro") || habbo_core::paths::has_ext(p, "hab")).collect();
+        let swfs: Vec<_> = dropped.iter().filter(|p| habbo_core::paths::has_ext(p, "swf")).cloned().collect();
+        if let Some(bundle) = bundles.first() {
+            let bundle = (*bundle).clone();
+            self.open_preview(ctx, &bundle);
+        } else if !swfs.is_empty() {
+            self.dialog = Some(Dialog::DroppedSwf(swfs));
+        } else {
+            self.status_text = "Drop .swf files to convert them, or a .nitro / .hab to look inside".into();
+        }
+    }
+
+    fn preview_ui(&self, ctx: &egui::Context, actions: &mut Vec<Action>) {
+        // A hint while files are dragged over the window.
+        if ctx.input(|i| !i.raw.hovered_files.is_empty()) {
+            let screen = ctx.screen_rect();
+            let painter = ctx.layer_painter(egui::LayerId::new(egui::Order::Foreground, egui::Id::new("drop-hint")));
+            painter.rect_filled(screen, 0.0, Color32::from_black_alpha(140));
+            painter.text(
+                screen.center(),
+                egui::Align2::CENTER_CENTER,
+                "Drop .swf files to convert them, or a .nitro / .hab to look inside",
+                egui::FontId::proportional(20.0),
+                Color32::WHITE,
+            );
+        }
+
+        let Some(preview) = &self.preview else { return };
+        let palette = Palette::current(ctx);
+        let mut open = true;
+        egui::Window::new(format!("Bundle: {}", preview.name()))
+            .id(egui::Id::new("bundle-preview"))
+            .open(&mut open)
+            .default_size([820.0, 620.0])
+            .collapsible(false)
+            .show(ctx, |ui| {
+                ui.label(RichText::new(preview.path.display().to_string()).size(11.5).color(palette.muted));
+                ui.add_space(6.0);
+                ui.horizontal_wrapped(|ui| {
+                    for (name, size) in &preview.entries {
+                        chip(ui, &format!("{name} · {}", human_size(*size)), palette.hover, palette.text);
+                    }
+                });
+                ui.add_space(8.0);
+                ui.columns(2, |columns| {
+                    columns[0].label(RichText::new("SHEET").size(10.5).strong().color(palette.subtle));
+                    match &preview.sheet {
+                        Some((texture, size, name)) => {
+                            columns[0].label(RichText::new(format!("{name}: {} × {} px", size[0], size[1])).size(12.0).color(palette.muted));
+                            egui::ScrollArea::both().id_salt("preview-sheet").max_height(480.0).show(&mut columns[0], |ui| {
+                                // Checkerboard-free: the window background shows through transparent pixels.
+                                let max = ui.available_width().max(200.0);
+                                let scale = (max / size[0] as f32).min(2.0);
+                                ui.image((texture.id(), vec2(size[0] as f32 * scale, size[1] as f32 * scale)));
+                            });
+                        }
+                        None => {
+                            columns[0].label(RichText::new("No sheet in this bundle.").color(palette.muted));
+                        }
+                    }
+                    columns[1].label(RichText::new("JSON").size(10.5).strong().color(palette.subtle));
+                    egui::ScrollArea::both().id_salt("preview-json").max_height(500.0).show(&mut columns[1], |ui| {
+                        // A read-only editor keeps the json indentation (a label would trim it).
+                        let mut json = preview.json.as_str();
+                        ui.add(egui::TextEdit::multiline(&mut json).code_editor().desired_width(f32::INFINITY));
+                    });
+                });
+            });
+        if !open {
+            actions.push(Action::ClosePreview);
+        }
+    }
+}
+
+fn human_size(bytes: usize) -> String {
+    match bytes {
+        b if b >= 1024 * 1024 => format!("{:.1} MB", b as f64 / (1024.0 * 1024.0)),
+        b if b >= 1024 => format!("{:.1} KB", b as f64 / 1024.0),
+        b => format!("{b} B"),
+    }
+}
+
+// ---------------------------------------------------------------- self-update
+
+impl ProApp {
+    /// Right side of the header: an available update, its install progress or the restart button.
+    /// Drawn right-to-left, before the status pill.
+    fn update_banner(&self, ui: &mut egui::Ui, palette: &Palette, actions: &mut Vec<Action>) {
+        if self.update.installed.is_some() {
+            if ui.add(primary_button("Restart to update")).clicked() {
+                actions.push(Action::RestartUpdated);
+            }
+            ui.label(RichText::new("Update installed.").size(12.0).color(palette.success_text));
+        } else if self.update.installing.is_some() {
+            ui.spinner();
+            ui.label(RichText::new("Downloading the update…").size(12.0).color(palette.muted));
+        } else if let Some(release) = &self.update.available {
+            if ui.add_enabled(!self.is_running, primary_button(&format!("Update to {}", release.version))).on_hover_text(&release.notes).clicked() {
+                actions.push(Action::InstallUpdate);
+            }
+            if let Some(error) = &self.update.error {
+                ui.label(RichText::new(error).size(12.0).color(palette.error_text));
+            }
+        }
+        ui.add_space(8.0);
+    }
 }

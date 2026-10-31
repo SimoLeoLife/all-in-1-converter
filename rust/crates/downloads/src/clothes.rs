@@ -9,6 +9,7 @@ use habbo_core::paths::HabboAssetFolder;
 
 use crate::asset_downloader;
 use crate::common::{self, colored, log, FetchError, INDEX_OUT_OF_RANGE, NULL_REFERENCE};
+use crate::resume;
 use crate::model;
 use crate::xml::Document;
 
@@ -95,12 +96,7 @@ async fn run() -> anyhow::Result<()> {
 
 /// `DownloadFileAsync`: an HTTP failure is printed and reported as `false`; other errors escape.
 async fn download_file(url: &str, file_path: &Path, file_name: &str) -> anyhow::Result<bool> {
-    let result: Result<(), FetchError> = async {
-        let bytes = common::get_bytes(common::default_client(), url).await?;
-        std::fs::write(file_path, bytes)?;
-        Ok(())
-    }
-    .await;
+    let result: Result<(), FetchError> = resume::download_to(common::default_client(), url, file_path, &resume::Options::FRESH).await;
     match result {
         Ok(()) => {
             log(Color::Green, &format!("📁 Downloaded: {file_name}"));

@@ -1,12 +1,15 @@
 //! `QuestsDownloader` (Quests.cs): the quest images named in external_flash_texts
 //! ("quests.<name>.<image>...") into Habbo_Default/quests.
 
-use std::path::Path;
+use std::collections::HashSet;
+use std::path::{Path, PathBuf};
 
 use anyhow::Result;
+use futures::StreamExt;
 use habbo_core::{outln, Color};
 
 use crate::common::{self, colored, FetchError};
+use crate::resume::{self, PartFile};
 
 const TEMP_FILE_PATH: &str = "./temp/external_texts.txt";
 
@@ -56,23 +59,72 @@ async fn run(config: &std::collections::HashMap<String, String>) -> Result<()> {
     outln!("External Flash Texts Downloaded...");
     outln!("Begin parsing...");
 
-    let mut download_count = 0;
+    // Not in the C# version: config.ini download_parallelism images are fetched at once, but every
+    // result is handled in the order of the one-by-one loop (same messages, same files).
+    let mut steps = Vec::new();
+    let mut seen = HashSet::new();
     for line in common::read_lines(TEMP_FILE_PATH)? {
         let Some((quest_name, quest_image)) = quest_parts(&line) else { continue };
-
-        if !Path::new(&format!("Habbo_Default/quests/{quest_name}_{quest_image}.png")).is_file() && !quest_image.contains('=') {
-            download_count += download_quest_image(&quests_url, &quest_name, &quest_image).await;
-        } else if quest_image.contains('=') {
-            colored(Color::Red, &format!("{quest_name}_{quest_image}.png is not valid!"));
+        if !quest_image.contains('=') {
+            steps.push(image_step(format!("{quest_name}_{quest_image}.png"), &mut seen));
+        } else {
+            steps.push(Step::Invalid(format!("{quest_name}_{quest_image}.png is not valid!")));
         }
+        steps.push(image_step(format!("{quest_name}.png"), &mut seen));
+    }
 
-        if !Path::new(&format!("Habbo_Default/quests/{quest_name}.png")).is_file() {
-            download_count += download_quest_image(&quests_url, &quest_name, "").await;
+    let client = common::default_client();
+    let quests_url = &quests_url;
+    let results = futures::stream::iter(steps)
+        .map(|step| async move {
+            match step {
+                Step::Image { file_name, first: true } => {
+                    let file_path = quest_path(&file_name);
+                    let fetched = if file_path.is_file() { None } else { Some(fetch(client, quests_url, &file_name).await) };
+                    (Step::Image { file_name, first: true }, fetched)
+                }
+                other => (other, None),
+            }
+        })
+        .buffered(common::download_parallelism());
+    let mut results = std::pin::pin!(results);
+
+    let mut download_count = 0;
+    while let Some((step, fetched)) = results.next().await {
+        match step {
+            Step::Invalid(message) => colored(Color::Red, &message),
+            Step::Image { file_name, first: true } => {
+                if let Some(fetched) = fetched {
+                    download_count += finish(fetched, &file_name);
+                }
+            }
+            // Asked for earlier: downloaded again only when the earlier attempt left no file.
+            Step::Image { file_name, first: false } => {
+                if !quest_path(&file_name).is_file() {
+                    download_count += finish(fetch(client, quests_url, &file_name).await, &file_name);
+                }
+            }
         }
     }
 
     console_done(download_count);
     Ok(())
+}
+
+enum Step {
+    Invalid(String),
+    /// `first`: the first time this run asks for the file (fetched ahead); later ones are
+    /// resolved in order, like the one-by-one loop's `File.Exists` check.
+    Image { file_name: String, first: bool },
+}
+
+fn image_step(file_name: String, seen: &mut HashSet<String>) -> Step {
+    let first = seen.insert(file_name.clone());
+    Step::Image { file_name, first }
+}
+
+fn quest_path(file_name: &str) -> PathBuf {
+    PathBuf::from(format!("Habbo_Default/quests/{file_name}"))
 }
 
 fn console_done(download_count: usize) {
@@ -82,12 +134,16 @@ fn console_done(download_count: usize) {
     habbo_core::console::set_color(Color::Gray);
 }
 
-async fn download_quest_image(base_url: &str, quest_name: &str, quest_image: &str) -> usize {
-    let file_name = if quest_image.is_empty() { format!("{quest_name}.png") } else { format!("{quest_name}_{quest_image}.png") };
-    let file_path = format!("Habbo_Default/quests/{file_name}");
+async fn fetch(client: &reqwest::Client, base_url: &str, file_name: &str) -> Result<PartFile, FetchError> {
+    let url = format!("{base_url}/{file_name}");
+    resume::fetch_ok(|| client.get(&url), &quest_path(file_name), &resume::Options::default()).await
+}
 
-    match download_file(&format!("{base_url}/{file_name}"), &file_path, &file_name).await {
+/// The end of `DownloadQuestImageAsync`: 1 when the image was saved (failures are silent).
+fn finish(fetched: Result<PartFile, FetchError>, file_name: &str) -> usize {
+    match fetched.and_then(|part| part.commit().map_err(FetchError::from)) {
         Ok(()) => {
+            colored(Color::Green, &format!("Downloaded: {file_name}"));
             colored(Color::Green, &format!("Downloaded: {file_name}"));
             1
         }
@@ -96,8 +152,7 @@ async fn download_quest_image(base_url: &str, quest_name: &str, quest_image: &st
 }
 
 async fn download_file(url: &str, file_path: &str, file_name: &str) -> Result<(), FetchError> {
-    let bytes = common::get_bytes(common::default_client(), url).await?;
-    std::fs::write(file_path, bytes)?;
+    resume::download_to(common::default_client(), url, Path::new(file_path), &resume::Options::FRESH).await?;
     colored(Color::Green, &format!("Downloaded: {file_name}"));
     Ok(())
 }

@@ -78,7 +78,29 @@ against values printed by .NET 11.
   1 % smaller. `config.ini` `webp_method` (`4` balanced, `1` fast) trades a little size for a
   2–3× faster conversion; every level is lossless.
 - A `config.ini` that misses keys takes them from the shipped default instead of failing.
-- The Professional window adds a Cancel button, a progress bar fed by the operation's own
-  progress lines, and a log in the console's colours.
+- The Professional window adds:
+  - **Cancel** for a running operation, a progress bar fed by its own progress lines, and the
+    log in the console's colours;
+  - a **queue** ("Add to queue"): runs go one after another, a failure stops the rest;
+  - **drag and drop**: `.swf` files are copied into `SWFCompiler/import/<kind>` and converted,
+    a `.nitro` / `.hab` opens in the **bundle preview** (sheet + json), also via "Open bundle…";
+  - a **run history** kept across sessions (`logs/history.json`, one log file per run);
+  - **Test connection** for the database settings;
+  - an **update** banner when a newer `rust-v*` release exists (`update_check`, `update_repo`
+    in config.ini; also "Check for updates" in both menus).
+- Downloads run `download_parallelism` files at a time (default 16, config.ini) and an
+  interrupted asset download resumes from its `.part` file; gamedata files always restart.
+- Before Fix offer IDs / sit-lay-walk / sprite IDs change anything, the affected tables are saved
+  to `Database/Backups/<operation>_<date>.sql` (restore with `mysql … < file`).
+- Fix sit / lay / walk no longer fails on a batch without wall items (the C# built invalid SQL).
+
+## Releases
+
+Bump `version` in `rust/Cargo.toml`, then push a matching tag; the *Rust release* workflow builds
+both binaries and publishes them, and "Check for updates" finds them:
+
+```bash
+git tag rust-v1.1.0 && git push origin rust-v1.1.0
+```
 - Error texts that came from .NET exceptions read differently where the underlying library
   (reqwest, mysql_async, quick-xml) reports them.

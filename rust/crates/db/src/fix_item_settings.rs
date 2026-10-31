@@ -87,9 +87,17 @@ pub(crate) fn batch_update_query(batch: &[(i32, FixItem)]) -> String {
     walk.push_str("ELSE allow_walk END");
     sit.push_str("ELSE allow_sit END");
     lay.push_str("ELSE allow_lay END");
-    width.push_str("ELSE width END");
-    length.push_str("ELSE length END");
-    stack_height.push_str("ELSE stack_height END");
+    // Fix over the C#: a batch without wall items left "CASE id ELSE width END" (no WHEN),
+    // which is invalid SQL, so the whole batch failed. Then the columns simply stay as they are.
+    if batch.iter().any(|(_, item)| item.is_wall) {
+        width.push_str("ELSE width END");
+        length.push_str("ELSE length END");
+        stack_height.push_str("ELSE stack_height END");
+    } else {
+        width = "width".into();
+        length = "length".into();
+        stack_height = "stack_height".into();
+    }
 
     format!(
         "UPDATE items_base SET allow_walk = {walk}, allow_sit = {sit}, allow_lay = {lay}, width = {width}, length = {length}, stack_height = {stack_height} WHERE id IN ({})",
@@ -178,6 +186,11 @@ pub async fn run() -> Result<()> {
         return Ok(());
     }
 
+    // New behaviour (not in the C# tool): back up items_base first; no backup, no changes.
+    if !crate::backup::backup_before_change(&["items_base"], "fix_item_settings").await {
+        return Ok(());
+    }
+
     let total_batches = total_to_update.div_ceil(100);
     // Dropped on every return path: an error must not leave the progress timer printing forever.
     let timer = ProgressTimer::start(total_batches);
@@ -221,6 +234,14 @@ width = CASE id WHEN 2 THEN '1' ELSE width END, \
 length = CASE id WHEN 2 THEN '1' ELSE length END, \
 stack_height = CASE id WHEN 2 THEN '0.00' ELSE stack_height END WHERE id IN (1,2)"
         );
+    }
+
+    #[test]
+    fn batch_without_wall_items_is_valid_sql() {
+        let room = FixItem { id: 10, canstandon: true, ..Default::default() };
+        let query = batch_update_query(&[(1, room)]);
+        assert!(!query.contains("CASE id ELSE"), "{query}");
+        assert!(query.ends_with("width = width, length = length, stack_height = stack_height WHERE id IN (1)"), "{query}");
     }
 
     #[test]
